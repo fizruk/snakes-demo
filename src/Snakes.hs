@@ -1,4 +1,4 @@
-module Lib
+module Snakes
     ( someFunc
     ) where
 

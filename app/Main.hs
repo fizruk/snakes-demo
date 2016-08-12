@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Snakes
 
 main :: IO ()
 main = someFunc
