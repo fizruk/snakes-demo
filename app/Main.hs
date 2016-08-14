@@ -10,7 +10,9 @@ main = play display bgColor fps initialWorld renderWorld handleWorld updateWorld
     bgColor = black
     fps     = 60
 
-    initialWorld = mkSnake 3 (1, 1) defaultGameConfig
+    initialWorld = mkSnake 90 (1, 1) defaultGameConfig
     renderWorld  = flip renderSnake defaultGameConfig
-    handleWorld _ w = w
     updateWorld dt = flip (moveSnake dt) defaultGameConfig
+
+    handleWorld (EventMotion mouse) = flip (handleAction (RedirectSnake mouse)) defaultGameConfig
+    handleWorld _ = id
