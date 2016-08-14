@@ -18,8 +18,21 @@ data Universe = Universe
   { uSnake      :: Snake      -- ^ Player's 'Snake'.
   , uFood       :: [Food]     -- ^ Infinite food source, only first food item is active.
   , uBonuses    :: [Bonus]    -- ^ Infinite bonus source, only first is active.
+  , uEffects    :: [Effect]   -- ^ Active bonus effects.
   , uDeadLinks  :: [DeadLink] -- ^ Dead links on the field, fading away.
   }
+
+-- | An active effect.
+data Effect = Effect
+  { effectType    :: BonusEffect  -- ^ Effect type.
+  , effectTimeout :: Float        -- ^ Time left.
+  }
+
+-- | Update effect's timer.
+updateEffect :: Float -> Effect -> Maybe Effect
+updateEffect dt e@Effect{..}
+  | effectTimeout > dt = Just e { effectTimeout = effectTimeout - dt }
+  | otherwise = Nothing
 
 -- | Initial universe.
 initUniverse :: [Point] -> [(Point, BonusEffect)] -> GameConfig -> Universe
@@ -27,6 +40,7 @@ initUniverse ps bs = Universe
   <$> initSnake
   <*> traverse mkFood ps
   <*> traverse (uncurry mkBonus) bs
+  <*> pure []
   <*> pure []
 
 -- | Update universe for each frame.
@@ -43,6 +57,7 @@ updateUniverseObjects dt u@Universe{..} cfg = u
   { uSnake = moveSnake dt uSnake cfg
   , uFood  = newFood
   , uBonuses = newBonuses
+  , uEffects = mapMaybe (updateEffect dt) uEffects
   , uDeadLinks = mapMaybe (flip (updateDeadLink dt) cfg) uDeadLinks }
   where
     newBonuses = case updateBonus dt (head uBonuses) of
@@ -69,6 +84,7 @@ checkBonusCollision u@Universe{..} cfg@GameConfig{..}
 -- | Check if snake collides with itself.
 checkSnakeCollision :: Universe -> GameConfig -> Universe
 checkSnakeCollision u@Universe{..} cfg@GameConfig{..}
+  | BonusPhantom `elem` map effectType uEffects = u
   | any (collides (head (snakeLinks uSnake), linkSize)) (map (, foodSize) (drop 2 (snakeLinks uSnake)))
     = u { uSnake = initSnake cfg
         , uDeadLinks = destroySnake uSnake cfg }
@@ -83,3 +99,6 @@ collides ((x, y), a) ((u, v), b) = ((a + b) / 2)^2 > (x - u)^2 + (y - v)^2
 applyBonusEffect :: BonusEffect -> Universe -> GameConfig -> Universe
 applyBonusEffect BonusReverse u@Universe{..} _
   = u { uSnake = reverseSnake uSnake }
+applyBonusEffect BonusPhantom u@Universe{..} GameConfig{..}
+  = u { uEffects = Effect BonusPhantom bonusPhantomDuration : uEffects }
+

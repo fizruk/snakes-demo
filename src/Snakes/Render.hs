@@ -13,12 +13,15 @@ renderUniverse Universe{..} cfg
     = foldMap (flip renderDeadLink cfg) uDeadLinks
    <> renderFood (head uFood) cfg
    <> renderBonus (head uBonuses) cfg
-   <> renderSnake uSnake cfg
+   <> renderSnake (map effectType uEffects) uSnake cfg
 
-renderSnake :: Snake -> GameConfig -> Picture
-renderSnake snake cfg@GameConfig{..}
+renderSnake :: [BonusEffect] -> Snake -> GameConfig -> Picture
+renderSnake effects snake cfg@GameConfig{..}
   = foldMap (flip renderLink cfg) (snakeLinks snake)
-  & color snakeColor
+  & color c
+  where
+    c | BonusPhantom `elem` effects = withAlpha 0.5 snakeColor
+      | otherwise = snakeColor
 
 renderLink :: Link -> GameConfig -> Picture
 renderLink (x, y) GameConfig{..}
@@ -46,6 +49,7 @@ renderFood Food{..} cfg@GameConfig{..}
 
 bonusColor :: BonusEffect -> Color
 bonusColor BonusReverse = magenta
+bonusColor BonusPhantom = cyan
 
 renderBonus :: Bonus -> GameConfig -> Picture
 renderBonus Bonus{..} GameConfig{..}

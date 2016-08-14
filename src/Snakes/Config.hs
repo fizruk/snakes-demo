@@ -20,6 +20,7 @@ data GameConfig = GameConfig
   , deadLinkColor     :: Color  -- ^ Color of dead links.
   , defaultBonusTimeout :: Float  -- ^ Default time before bonus disappears.
   , bonusSize         :: Float  -- ^ Radius of a bonus item.
+  , bonusPhantomDuration :: Float -- ^ Duration of a phantom bonus effect.
   }
 
 -- | Default game configuration.
@@ -41,4 +42,5 @@ defaultGameConfig = GameConfig
   , deadLinkColor    = greyN 0.3
   , defaultBonusTimeout = 5
   , bonusSize = 10
+  , bonusPhantomDuration = 10
   }

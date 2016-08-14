@@ -13,7 +13,7 @@ main = play display bgColor fps initialWorld renderWorld handleWorld updateWorld
 
     initialWorld = initUniverse
       (cycle [(100, 200), (-50, 0), (300, -300)])
-      (cycle [((-200, -30), BonusReverse), ((100, -200), BonusReverse)])
+      (cycle [((-200, -30), BonusReverse), ((100, -200), BonusPhantom)])
       cfg
     renderWorld  = flip renderUniverse cfg
     updateWorld dt = flip (updateUniverse dt) cfg

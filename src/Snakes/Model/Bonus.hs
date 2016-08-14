@@ -14,6 +14,8 @@ data Bonus = Bonus
 -- | What a bonus does.
 data BonusEffect
   = BonusReverse  -- ^ Reverse all snakes in the game.
+  | BonusPhantom  -- ^ Temporarily make snake a phantom, allowing crosses with other snakes and self-crosses.
+  deriving (Eq)
 
 -- | Make a bonus item at a given location with given effect.
 mkBonus :: Point -> BonusEffect -> GameConfig -> Bonus
