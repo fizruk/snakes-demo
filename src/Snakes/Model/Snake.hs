@@ -107,3 +107,14 @@ moveLinkTo pos link GameConfig{..}
 -- | Compute an angular direction between two vectors.
 angleDir :: Vector -> Vector -> Float
 angleDir (x, y) (u, v) = signum (x * v - y * u)
+
+-- | Make snake's tail its head, change direction and remove target.
+reverseSnake :: Snake -> Snake
+reverseSnake Snake{..} = Snake
+  { snakeLinks  = newLinks
+  , snakeDir    = normalizeV (a - b)
+  , snakeTarget = Nothing }
+  where
+    newLinks = reverse snakeLinks
+    a:b:_ = newLinks
+

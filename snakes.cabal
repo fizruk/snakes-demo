@@ -19,6 +19,7 @@ library
     Snakes
     Snakes.Config
     Snakes.Model
+    Snakes.Model.Bonus
     Snakes.Model.Food
     Snakes.Model.Snake
     Snakes.Model.Universe

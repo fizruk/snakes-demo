@@ -11,7 +11,10 @@ main = play display bgColor fps initialWorld renderWorld handleWorld updateWorld
     bgColor = black
     fps     = 60
 
-    initialWorld = initUniverse (cycle [(100, 200), (-50, 0), (300, -300)]) cfg
+    initialWorld = initUniverse
+      (cycle [(100, 200), (-50, 0), (300, -300)])
+      (cycle [((-200, -30), BonusReverse), ((100, -200), BonusReverse)])
+      cfg
     renderWorld  = flip renderUniverse cfg
     updateWorld dt = flip (updateUniverse dt) cfg
 

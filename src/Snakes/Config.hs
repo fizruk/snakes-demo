@@ -18,6 +18,8 @@ data GameConfig = GameConfig
   , deadLinkDuration  :: Float  -- ^ For how long dead links appear on the field.
   , deadLinkSpeed     :: Float  -- ^ How fast dead links float around.
   , deadLinkColor     :: Color  -- ^ Color of dead links.
+  , defaultBonusTimeout :: Float  -- ^ Default time before bonus disappears.
+  , bonusSize         :: Float  -- ^ Radius of a bonus item.
   }
 
 -- | Default game configuration.
@@ -37,4 +39,6 @@ defaultGameConfig = GameConfig
   , deadLinkDuration = 2
   , deadLinkSpeed    = 30
   , deadLinkColor    = greyN 0.3
+  , defaultBonusTimeout = 5
+  , bonusSize = 10
   }

@@ -12,6 +12,7 @@ renderUniverse :: Universe -> GameConfig -> Picture
 renderUniverse Universe{..} cfg
     = foldMap (flip renderDeadLink cfg) uDeadLinks
    <> renderFood (head uFood) cfg
+   <> renderBonus (head uBonuses) cfg
    <> renderSnake uSnake cfg
 
 renderSnake :: Snake -> GameConfig -> Picture
@@ -33,15 +34,30 @@ renderDeadLink DeadLink{..} cfg@GameConfig{..}
 
 renderFood :: Food -> GameConfig -> Picture
 renderFood Food{..} cfg@GameConfig{..}
-  = (timeRing <>  item)
+  = (timeRing <> item)
   & translate x y
   & color white
   where
     (x, y) = foodLocation
     timeRing = renderTimeout (foodTimeout / defaultFoodTimeout) foodSize
     item
-      = renderItem foodSize 5
+      = renderItem foodSize 6
       & rotate (itemRotationRate * foodTimeout)
+
+bonusColor :: BonusEffect -> Color
+bonusColor BonusReverse = magenta
+
+renderBonus :: Bonus -> GameConfig -> Picture
+renderBonus Bonus{..} GameConfig{..}
+  = (item <> ring)
+  & translate x y
+  & color (bonusColor bonusEffect)
+  where
+    (x, y) = bonusLocation
+    ring = renderTimeout (bonusTimeout / defaultBonusTimeout) bonusSize
+    item
+      = renderItem bonusSize 5
+      & rotate (itemRotationRate * bonusTimeout)
 
 renderItem :: Float -> Int -> Picture
 renderItem size n
