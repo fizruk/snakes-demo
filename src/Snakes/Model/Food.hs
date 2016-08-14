@@ -12,12 +12,14 @@ data Food = Food
   , foodTimeout   :: Duration -- ^ How long until location change.
   }
 
+-- | Make a food item at a given location.
 mkFood :: Point -> GameConfig -> Food
 mkFood loc GameConfig{..} = Food
   { foodLocation = loc
   , foodTimeout  = defaultFoodTimeout
   }
 
+-- | Update food item's timer.
 updateFood :: Float -> Food -> Maybe Food
 updateFood dt food
   | foodTimeout food > dt = Just food { foodTimeout = foodTimeout food - dt }

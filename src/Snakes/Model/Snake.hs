@@ -32,6 +32,11 @@ mkSnake n dir dist = Snake
     step = mulSV dist d
     d = normalizeV dir
 
+-- | Feed a snake effectively making it one link longer.
+feedSnake :: Snake -> Snake
+feedSnake snake@Snake{..} = snake
+  { snakeLinks = snakeLinks ++ [ last snakeLinks ] }
+
 -- | Move snake naturally given time delta.
 moveSnake :: Float -> Snake -> GameConfig -> Snake
 moveSnake dt snake@Snake{..} cfg@GameConfig{..} = snake
@@ -63,10 +68,12 @@ moveLinks dir (l:ls) cfg = moveLinks' (l + dir) ls
     moveLinks' pos (n:ns) = pos : moveLinks' (moveLinkTo pos n cfg) ns
 
 -- | Move a single link closer to a given point.
+-- Leave link be if already close enough.
 moveLinkTo :: Point -> Link -> GameConfig -> Link
-moveLinkTo pos link cfg = pos - mulSV (linkDistance cfg) (normalizeV (pos - link))
+moveLinkTo pos link GameConfig{..}
+  | magV (pos - link) < linkDistance = link
+  | otherwise = pos - mulSV linkDistance (normalizeV (pos - link))
 
 -- | Compute an angular direction between two vectors.
 angleDir :: Vector -> Vector -> Float
 angleDir (x, y) (u, v) = signum (x * v - y * u)
-
