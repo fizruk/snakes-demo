@@ -19,6 +19,7 @@ library
     Snakes
     Snakes.Config
     Snakes.Model
+    Snakes.Model.Snake
     Snakes.Render
   build-depends:       base >= 4.7 && < 5
                      , gloss

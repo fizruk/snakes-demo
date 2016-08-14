@@ -13,4 +13,4 @@ renderLink (x, y) cfg = thickCircle r r
   & translate x y
   & color (snakeColor cfg)
   where
-    r = linkSize cfg / 2
+    r = linkSize cfg * 2/3
