@@ -1,6 +1,9 @@
-module Snakes
-    ( someFunc
-    ) where
+module Snakes (
+  module Snakes.Config,
+  module Snakes.Model,
+  module Snakes.Render,
+) where
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+import Snakes.Config
+import Snakes.Model
+import Snakes.Render

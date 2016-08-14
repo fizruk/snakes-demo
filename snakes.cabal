@@ -15,8 +15,13 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Snakes
+  exposed-modules:
+    Snakes
+    Snakes.Config
+    Snakes.Model
+    Snakes.Render
   build-depends:       base >= 4.7 && < 5
+                     , gloss
   default-language:    Haskell2010
 
 executable snakes
