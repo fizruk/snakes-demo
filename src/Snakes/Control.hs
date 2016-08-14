@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Snakes.Control where
 
 import Graphics.Gloss
@@ -10,3 +11,6 @@ data Action
 
 handleAction :: Action -> Snake -> GameConfig -> Snake
 handleAction (RedirectSnake pos) snake _ = snake { snakeTarget = Just pos }
+
+handleUniverse :: Action -> Universe -> GameConfig -> Universe
+handleUniverse action u@Universe{..} cfg = u { uSnake = handleAction action uSnake cfg }

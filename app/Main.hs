@@ -11,11 +11,11 @@ main = play display bgColor fps initialWorld renderWorld handleWorld updateWorld
     bgColor = black
     fps     = 60
 
-    initialWorld = initSnake cfg
-    renderWorld  = flip renderSnake cfg
-    updateWorld dt = flip (moveSnake dt) cfg
+    initialWorld = initUniverse (cycle [(100, 200), (-50, 0), (300, -300)]) cfg
+    renderWorld  = flip renderUniverse cfg
+    updateWorld dt = flip (updateUniverse dt) cfg
 
-    handleWorld (EventMotion mouse) = flip (handleAction (RedirectSnake mouse)) cfg
+    handleWorld (EventMotion mouse) = flip (handleUniverse (RedirectSnake mouse)) cfg
     handleWorld _ = id
 
     cfg@GameConfig{..} = defaultGameConfig

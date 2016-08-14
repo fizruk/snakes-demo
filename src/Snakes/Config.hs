@@ -12,17 +12,23 @@ data GameConfig = GameConfig
   , initialDir    :: Vector -- ^ Initial direction of the snake.
   , initialLen    :: Int    -- ^ Initial snake's length.
   , fieldSize     :: (Float, Float) -- ^ Size of game's field.
+  , defaultFoodTimeout :: Float -- ^ Default food regeneration interval.
+  , foodSize      :: Float      -- ^ Radius of a food item.
+  , itemRotationRate  :: Float  -- ^ Rotation rate for food and bonus items.
   }
 
 -- | Default game configuration.
 defaultGameConfig :: GameConfig
 defaultGameConfig = GameConfig
-  { linkSize      = 7
-  , linkDistance  = 7.5
-  , snakeSpeed    = 140
+  { linkSize      = 10
+  , linkDistance  = 11
+  , snakeSpeed    = 160
   , snakeColor    = dark red
-  , maxTurnAngle  = 6
+  , maxTurnAngle  = 5
   , initialDir    = (1, 2)
   , initialLen    = 5
   , fieldSize     = (700, 700)
+  , defaultFoodTimeout = 10
+  , foodSize      = 20
+  , itemRotationRate = 50
   }

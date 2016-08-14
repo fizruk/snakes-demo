@@ -19,7 +19,9 @@ library
     Snakes
     Snakes.Config
     Snakes.Model
+    Snakes.Model.Food
     Snakes.Model.Snake
+    Snakes.Model.Universe
     Snakes.Render
   build-depends:       base >= 4.7 && < 5
                      , gloss
