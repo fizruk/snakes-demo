@@ -5,6 +5,7 @@ module Snakes.Model.Universe where
 import Control.Applicative
 import Control.Monad
 import Data.Traversable
+import Data.Maybe (mapMaybe)
 import Graphics.Gloss
 
 import Snakes.Config
@@ -13,8 +14,9 @@ import Snakes.Model.Food
 
 -- | The universe of the The Game of Snakes.
 data Universe = Universe
-  { uSnake  :: Snake    -- ^ Player's 'Snake'.
-  , uFood   :: [Food]   -- ^ Infinite food source, only first food item is active.
+  { uSnake      :: Snake      -- ^ Player's 'Snake'.
+  , uFood       :: [Food]     -- ^ Infinite food source, only first food item is active.
+  , uDeadLinks  :: [DeadLink] -- ^ Dead links on the field, fading away.
   }
 
 -- | Initial universe.
@@ -22,6 +24,7 @@ initUniverse :: [Point] -> GameConfig -> Universe
 initUniverse ps = Universe
   <$> initSnake
   <*> traverse mkFood ps
+  <*> pure []
 
 -- | Update universe for each frame.
 updateUniverse :: Float -> Universe -> GameConfig -> Universe
@@ -34,7 +37,8 @@ updateUniverse dt
 updateUniverseObjects :: Float -> Universe -> GameConfig -> Universe
 updateUniverseObjects dt u@Universe{..} cfg = u
   { uSnake = moveSnake dt uSnake cfg
-  , uFood  = newFood }
+  , uFood  = newFood
+  , uDeadLinks = mapMaybe (flip (updateDeadLink dt) cfg) uDeadLinks }
   where
     newFood = case updateFood dt (head uFood) of
       Nothing -> tail uFood
@@ -50,9 +54,10 @@ checkFoodCollision u@Universe{..} GameConfig{..}
 
 -- | Check if snake collides with itself.
 checkSnakeCollision :: Universe -> GameConfig -> Universe
-checkSnakeCollision u@Universe{..} GameConfig{..}
+checkSnakeCollision u@Universe{..} cfg@GameConfig{..}
   | any (collides (head (snakeLinks uSnake), linkSize)) (map (, foodSize) (drop 2 (snakeLinks uSnake)))
-    = u
+    = u { uSnake = initSnake cfg
+        , uDeadLinks = destroySnake uSnake cfg }
   | otherwise = u
 
 -- | Check collision for two objects.

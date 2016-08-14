@@ -15,6 +15,9 @@ data GameConfig = GameConfig
   , defaultFoodTimeout :: Float -- ^ Default food regeneration interval.
   , foodSize      :: Float      -- ^ Radius of a food item.
   , itemRotationRate  :: Float  -- ^ Rotation rate for food and bonus items.
+  , deadLinkDuration  :: Float  -- ^ For how long dead links appear on the field.
+  , deadLinkSpeed     :: Float  -- ^ How fast dead links float around.
+  , deadLinkColor     :: Color  -- ^ Color of dead links.
   }
 
 -- | Default game configuration.
@@ -26,9 +29,12 @@ defaultGameConfig = GameConfig
   , snakeColor    = dark red
   , maxTurnAngle  = 5
   , initialDir    = (1, 2)
-  , initialLen    = 5
+  , initialLen    = 3
   , fieldSize     = (700, 700)
   , defaultFoodTimeout = 10
   , foodSize      = 20
   , itemRotationRate = 50
+  , deadLinkDuration = 2
+  , deadLinkSpeed    = 30
+  , deadLinkColor    = greyN 0.3
   }

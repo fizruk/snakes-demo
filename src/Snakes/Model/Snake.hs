@@ -16,6 +16,13 @@ data Snake = Snake
 -- | A single link of a 'Snake'.
 type Link = Point
 
+-- | A dead snake's link, slowly fading away.
+data DeadLink = DeadLink
+  { linkLocation  :: Point    -- ^ Current location of the link.
+  , linkTimeout   :: Float    -- ^ Time until complete fade out.
+  , linkDir       :: Vector   -- ^ Direction of flow.
+  }
+
 -- | Create a 'Snake' in the initial location.
 initSnake :: GameConfig -> Snake
 initSnake GameConfig{..} = mkSnake initialLen initialDir linkDistance
@@ -36,6 +43,29 @@ mkSnake n dir dist = Snake
 feedSnake :: Snake -> Snake
 feedSnake snake@Snake{..} = snake
   { snakeLinks = snakeLinks ++ [ last snakeLinks ] }
+
+-- | Destroy a 'Snake', leaving some floating dead links.
+destroySnake :: Snake -> GameConfig -> [DeadLink]
+destroySnake Snake{..} GameConfig{..} = zipWith mkDeadLink snakeLinks dirs
+  where
+    h = head snakeLinks + snakeDir
+    t = last snakeLinks - snakeDir
+    ls = h : snakeLinks ++ [t]
+    dirs = zipWith3 findDir ls snakeLinks (drop 2 ls)
+    findDir prev curr next = normalizeV ((curr - prev) + (curr - next))
+
+    mkDeadLink loc dir = DeadLink
+      { linkLocation = loc
+      , linkTimeout  = deadLinkDuration
+      , linkDir      = dir }
+
+-- | Move 'DeadLink' around and update its timer.
+updateDeadLink :: Float -> DeadLink -> GameConfig -> Maybe DeadLink
+updateDeadLink dt link@DeadLink{..} GameConfig{..}
+  | linkTimeout <= dt = Nothing
+  | otherwise         = Just link
+      { linkLocation = linkLocation + mulSV (dt * deadLinkSpeed) linkDir
+      , linkTimeout  = linkTimeout - dt }
 
 -- | Move snake naturally given time delta.
 moveSnake :: Float -> Snake -> GameConfig -> Snake

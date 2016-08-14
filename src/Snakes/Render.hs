@@ -10,18 +10,26 @@ import Snakes.Model
 
 renderUniverse :: Universe -> GameConfig -> Picture
 renderUniverse Universe{..} cfg
-    = renderFood (head uFood) cfg
+    = foldMap (flip renderDeadLink cfg) uDeadLinks
+   <> renderFood (head uFood) cfg
    <> renderSnake uSnake cfg
 
 renderSnake :: Snake -> GameConfig -> Picture
-renderSnake snake cfg = foldMap (flip renderLink cfg) (snakeLinks snake)
+renderSnake snake cfg@GameConfig{..}
+  = foldMap (flip renderLink cfg) (snakeLinks snake)
+  & color snakeColor
 
 renderLink :: Link -> GameConfig -> Picture
-renderLink (x, y) GameConfig{..} = thickCircle r r
+renderLink (x, y) GameConfig{..}
+  = thickCircle r r
   & translate x y
-  & color snakeColor
   where
     r = linkSize * 2/3
+
+renderDeadLink :: DeadLink -> GameConfig -> Picture
+renderDeadLink DeadLink{..} cfg@GameConfig{..}
+  = renderLink linkLocation cfg
+  & color (withAlpha (linkTimeout / deadLinkDuration) deadLinkColor)
 
 renderFood :: Food -> GameConfig -> Picture
 renderFood Food{..} cfg@GameConfig{..}
