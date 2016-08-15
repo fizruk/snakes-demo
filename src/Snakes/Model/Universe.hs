@@ -134,18 +134,31 @@ checkBonusCollision u@Universe{..} cfg = case fed of
 -- | Check if any snakes collide.
 checkSnakeCollision :: Universe -> GameConfig -> Universe
 checkSnakeCollision u@Universe{..} cfg@GameConfig{..}
-  = u { uSnakes    = newSnakes <> uSnakes
-      , uDeadLinks = uDeadLinks <> newDeadLinks
-      , uSpawns    = drop (length newSnakes) uSpawns }
+  = respawnSnakes dead (destroySnakes dead u cfg) cfg
   where
     phantoms  = mapMaybe effectPlayer (filter ((== BonusPhantom) . effectType) uEffects)
     snakes    = Map.toList (Map.filterWithKey (\k v -> k `notElem` phantoms) uSnakes)
     dead      = map (fst . fst) (filter namedSnakesCollision (splits snakes))
-    newSnakes = Map.fromList (zip dead (map (flip initSnake cfg) uSpawns))
-    newDeadLinks = concatMap (flip destroySnake cfg . snd) (filter ((`elem` dead) . fst) snakes)
 
     namedSnakesCollision (s, ss) = snakesCollision (map snd ss) (snd s) cfg
     splits xs = zip xs (zipWith (++) (inits xs) (tail (tails xs)))
+
+destroySnakes :: [PlayerName] -> Universe -> GameConfig -> Universe
+destroySnakes names u@Universe{..} cfg@GameConfig{..} = u
+  { uSnakes = foldr Map.delete uSnakes names
+  , uDeadLinks = newDeadLinks <> uDeadLinks }
+  where
+    snakes = map snd (filter ((`elem` names) . fst) (Map.toList uSnakes))
+    newDeadLinks = concatMap (flip destroySnake cfg) snakes
+
+respawnSnakes :: [PlayerName] -> Universe -> GameConfig -> Universe
+respawnSnakes names u@Universe{..} cfg@GameConfig{..} = u
+  { uSnakes = newSnakes <> uSnakes
+  , uSpawns = drop (length newSnakes) uSpawns
+  , uEffects = newEffects <> uEffects }
+  where
+    newSnakes = Map.fromList (zip names (map (flip initSnake cfg) uSpawns))
+    newEffects = map (Effect BonusPhantom bonusPhantomDuration . Just) names
 
 -- | Check snake collision with itself or other snakes.
 snakesCollision :: [Snake] -> Snake -> GameConfig -> Bool
