@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:
     Snakes
+    Snakes.Bot
     Snakes.Config
     Snakes.Control
     Snakes.Model
