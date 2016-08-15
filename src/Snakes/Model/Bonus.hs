@@ -2,6 +2,7 @@
 module Snakes.Model.Bonus where
 
 import Graphics.Gloss
+import System.Random
 import Snakes.Config
 
 -- | A bonus item.
@@ -15,7 +16,13 @@ data Bonus = Bonus
 data BonusEffect
   = BonusReverse  -- ^ Reverse all snakes in the game.
   | BonusPhantom  -- ^ Temporarily make snake a phantom, allowing crosses with other snakes and self-crosses.
-  deriving (Eq)
+  deriving (Eq, Enum, Bounded)
+
+instance Random BonusEffect where
+  randomR (a, b) g =
+    case randomR (fromEnum a, fromEnum b) g of
+      (x, g') -> (toEnum x, g')
+  random g = randomR (minBound, maxBound) g
 
 -- | Make a bonus item at a given location with given effect.
 mkBonus :: Point -> BonusEffect -> GameConfig -> Bonus

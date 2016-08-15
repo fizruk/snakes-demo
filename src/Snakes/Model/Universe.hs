@@ -7,6 +7,7 @@ import Control.Monad
 import Data.Traversable
 import Data.Maybe (mapMaybe)
 import Graphics.Gloss
+import System.Random
 
 import Snakes.Config
 import Snakes.Model.Bonus
@@ -33,6 +34,22 @@ updateEffect :: Float -> Effect -> Maybe Effect
 updateEffect dt e@Effect{..}
   | effectTimeout > dt = Just e { effectTimeout = effectTimeout - dt }
   | otherwise = Nothing
+
+randomPoints :: Float -> Float -> IO [Point]
+randomPoints w h = do
+  xs <- randomRs (-w/2, w/2) <$> newStdGen
+  ys <- randomRs (-h/2, h/2) <$> newStdGen
+  return (zip xs ys)
+
+-- | Generate a random 'Universe'.
+randomUniverse :: GameConfig -> IO Universe
+randomUniverse cfg@GameConfig{..} = do
+  foodLocs  <- randomPoints (w - foodSize)  (h - foodSize)
+  bonusLocs <- randomPoints (w - bonusSize) (h - bonusSize)
+  effects   <- randoms <$> newStdGen
+  return (initUniverse foodLocs (zip bonusLocs effects) cfg)
+  where
+    (w, h) = fieldSize
 
 -- | Initial universe.
 initUniverse :: [Point] -> [(Point, BonusEffect)] -> GameConfig -> Universe
