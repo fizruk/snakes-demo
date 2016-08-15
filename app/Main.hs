@@ -6,7 +6,8 @@ import Snakes
 
 main :: IO ()
 main = do
-  initialWorld <- randomUniverse cfg
+  u <- randomUniverse cfg
+  let initialWorld = addPlayer "You" u cfg
   play display bgColor fps initialWorld renderWorld handleWorld updateWorld
   where
     display = InWindow "The Game of Snakes" (w, h) (100, 100)
@@ -16,7 +17,7 @@ main = do
     renderWorld  = flip renderUniverse cfg
     updateWorld dt = flip (updateUniverse dt) cfg
 
-    handleWorld (EventMotion mouse) = flip (handleUniverse (RedirectSnake mouse)) cfg
+    handleWorld (EventMotion mouse) = flip (handlePlayerAction "You" (RedirectSnake mouse)) cfg
     handleWorld _ = id
 
     cfg@GameConfig{..} = defaultGameConfig

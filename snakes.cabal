@@ -18,6 +18,7 @@ library
   exposed-modules:
     Snakes
     Snakes.Config
+    Snakes.Control
     Snakes.Model
     Snakes.Model.Bonus
     Snakes.Model.Food
@@ -27,6 +28,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , gloss
                      , random
+                     , containers
   default-language:    Haskell2010
 
 executable snakes

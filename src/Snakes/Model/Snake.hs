@@ -24,15 +24,15 @@ data DeadLink = DeadLink
   }
 
 -- | Create a 'Snake' in the initial location.
-initSnake :: GameConfig -> Snake
-initSnake GameConfig{..} = mkSnake initialLen initialDir linkDistance
+initSnake :: (Point, Vector) -> GameConfig -> Snake
+initSnake (loc, dir) GameConfig{..} = mkSnake loc dir initialLen linkDistance
 
 -- | @mkSnake n dir dist@ creates a straight 'Snake' with @n@ links,
 -- poiting in @dir@ direction and with head at @(0, 0)@.
 -- Initial length distance is @dist@.
-mkSnake :: Int -> Vector -> Float -> Snake
-mkSnake n dir dist = Snake
-  { snakeLinks  = take n (iterate (subtract step) (0, 0))
+mkSnake :: Point -> Vector -> Int -> Float -> Snake
+mkSnake loc dir n dist = Snake
+  { snakeLinks  = take n (iterate (subtract step) loc)
   , snakeDir    = d
   , snakeTarget = Nothing }
   where

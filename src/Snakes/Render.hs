@@ -1,7 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 module Snakes.Render where
 
+import Control.Arrow (first)
 import Data.Function ((&))
+import qualified Data.Map as Map
 import Data.Monoid
 import Graphics.Gloss
 import Graphics.Gloss.Data.Vector
@@ -13,7 +15,10 @@ renderUniverse Universe{..} cfg
     = foldMap (flip renderDeadLink cfg) uDeadLinks
    <> renderFood (head uFood) cfg
    <> renderBonus (head uBonuses) cfg
-   <> renderSnake (map effectType uEffects) uSnake cfg
+   <> foldMap (flip (uncurry renderSnake) cfg) snakesWithEffects
+  where
+    getEffects name = map effectType (filter ((== Just name) . effectPlayer) uEffects)
+    snakesWithEffects = map (first getEffects) (Map.toList uSnakes)
 
 renderSnake :: [BonusEffect] -> Snake -> GameConfig -> Picture
 renderSnake effects snake cfg@GameConfig{..}

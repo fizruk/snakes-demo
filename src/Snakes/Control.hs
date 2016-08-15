@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Snakes.Control where
 
+import qualified Data.Map as Map
 import Graphics.Gloss
 import Snakes.Config
 import Snakes.Model
@@ -12,5 +13,5 @@ data Action
 handleAction :: Action -> Snake -> GameConfig -> Snake
 handleAction (RedirectSnake pos) snake _ = snake { snakeTarget = Just pos }
 
-handleUniverse :: Action -> Universe -> GameConfig -> Universe
-handleUniverse action u@Universe{..} cfg = u { uSnake = handleAction action uSnake cfg }
+handlePlayerAction :: PlayerName -> Action -> Universe -> GameConfig -> Universe
+handlePlayerAction name action u@Universe{..} cfg = u { uSnakes = Map.adjust (flip (handleAction action) cfg) name uSnakes }
