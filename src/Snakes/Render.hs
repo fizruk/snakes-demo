@@ -21,8 +21,8 @@ renderUniverse Universe{..} cfg
     snakesWithEffects = map (first getEffects) (Map.toList uSnakes)
 
 renderSnake :: [BonusEffect] -> Snake -> GameConfig -> Picture
-renderSnake effects snake cfg@GameConfig{..}
-  = foldMap (flip renderLink cfg) (snakeLinks snake)
+renderSnake effects Snake{..} cfg@GameConfig{..}
+  = foldMap (flip renderLink cfg) snakeLinks
   & color c
   where
     c | BonusPhantom `elem` effects = withAlpha 0.5 snakeColor

@@ -7,7 +7,6 @@ data GameConfig = GameConfig
   { linkSize      :: Float  -- ^ Radius of a single link.
   , linkDistance  :: Float  -- ^ Distance between adjusent link centers.
   , snakeSpeed    :: Float  -- ^ Default snake speed.
-  , snakeColor    :: Color  -- ^ Default snake color.
   , maxTurnAngle  :: Float  -- ^ Maximum snake's turn angle velocity in radians per second.
   , initialDir    :: Vector -- ^ Initial direction of the snake.
   , initialLen    :: Int    -- ^ Initial snake's length.
@@ -21,6 +20,7 @@ data GameConfig = GameConfig
   , defaultBonusTimeout :: Float  -- ^ Default time before bonus disappears.
   , bonusSize         :: Float  -- ^ Radius of a bonus item.
   , bonusPhantomDuration :: Float -- ^ Duration of a phantom bonus effect.
+  , snakeColors   :: [Color]    -- ^ Available snake colors.
   }
 
 -- | Default game configuration.
@@ -29,7 +29,6 @@ defaultGameConfig = GameConfig
   { linkSize      = 10
   , linkDistance  = 11
   , snakeSpeed    = 160
-  , snakeColor    = dark red
   , maxTurnAngle  = 5
   , initialDir    = (1, 2)
   , initialLen    = 3
@@ -43,4 +42,5 @@ defaultGameConfig = GameConfig
   , defaultBonusTimeout = 5
   , bonusSize = 10
   , bonusPhantomDuration = 10
+  , snakeColors = map dark [red, green, cyan, orange, magenta, yellow]
   }

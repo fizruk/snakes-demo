@@ -2,8 +2,9 @@
 {-# LANGUAGE PatternGuards #-}
 module Snakes.Model.Snake where
 
-import Graphics.Gloss.Data.Vector
+import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Data.Point
+import Graphics.Gloss.Data.Vector
 import Snakes.Config
 
 -- | A snake is represented by a list of 'Link's and a direction of snake's head.
@@ -11,6 +12,7 @@ data Snake = Snake
   { snakeLinks  :: [Link]       -- ^ A list of links. First link is head, last link is tail.
   , snakeDir    :: Vector       -- ^ Snake's direction is a normalized vector.
   , snakeTarget :: Maybe Point  -- ^ Snake's target position.
+  , snakeColor  :: Color        -- ^ Color of the snake.
   }
 
 -- | A single link of a 'Snake'.
@@ -24,17 +26,18 @@ data DeadLink = DeadLink
   }
 
 -- | Create a 'Snake' in the initial location.
-initSnake :: (Point, Vector) -> GameConfig -> Snake
-initSnake (loc, dir) GameConfig{..} = mkSnake loc dir initialLen linkDistance
+initSnake :: (Point, Vector) -> Color -> GameConfig -> Snake
+initSnake (loc, dir) c GameConfig{..} = mkSnake loc dir c initialLen linkDistance
 
 -- | @mkSnake n dir dist@ creates a straight 'Snake' with @n@ links,
 -- poiting in @dir@ direction and with head at @(0, 0)@.
 -- Initial length distance is @dist@.
-mkSnake :: Point -> Vector -> Int -> Float -> Snake
-mkSnake loc dir n dist = Snake
+mkSnake :: Point -> Vector -> Color -> Int -> Float -> Snake
+mkSnake loc dir c n dist = Snake
   { snakeLinks  = take n (iterate (subtract step) loc)
   , snakeDir    = d
-  , snakeTarget = Nothing }
+  , snakeTarget = Nothing
+  , snakeColor  = c }
   where
     step = mulSV dist d
     d = normalizeV dir
@@ -110,7 +113,7 @@ angleDir (x, y) (u, v) = signum (x * v - y * u)
 
 -- | Make snake's tail its head, change direction and remove target.
 reverseSnake :: Snake -> Snake
-reverseSnake Snake{..} = Snake
+reverseSnake snake@Snake{..} = snake
   { snakeLinks  = newLinks
   , snakeDir    = normalizeV (a - b)
   , snakeTarget = Nothing }

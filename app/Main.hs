@@ -11,11 +11,13 @@ import Snakes
 
 main :: IO ()
 main = do
-  ru <- randomUniverse cfg
-  let u = addPlayer "You" ru cfg
+  u <- randomUniverse cfg
   initialWorld <- atomically $ newTVar (addPlayer "You" u cfg)
-  addBot "Bot 1" simpleBot initialWorld cfg
-  addBot "Bot 2" simpleBot initialWorld cfg
+  addBot "Bot 1" simpleBot  initialWorld cfg
+  addBot "Bot 2" phantomBot initialWorld cfg
+  addBot "Bot 3" bonusBot   initialWorld cfg
+  addBot "Bot 4" simpleBot  initialWorld cfg
+  addBot "Bot 5" phantomBot initialWorld cfg
 
   playIO display bgColor fps initialWorld renderWorld handleWorld updateWorld
   where

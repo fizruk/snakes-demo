@@ -30,6 +30,7 @@ data Universe = Universe
   , uEffects    :: [Effect]             -- ^ Active bonus effects.
   , uDeadLinks  :: [DeadLink]           -- ^ Dead links on the field, fading away.
   , uSpawns     :: [(Point, Vector)]    -- ^ Infinite list of spawn locations and directions.
+  , uColors     :: [Color]              -- ^ Available colors for new players.
   }
 
 -- | An active effect.
@@ -73,11 +74,13 @@ initUniverse ps bs spawns = Universe
   <*> pure []
   <*> pure []
   <*> pure spawns
+  <*> fmap cycle snakeColors
 
 addPlayer :: PlayerName -> Universe -> GameConfig -> Universe
 addPlayer name u@Universe{..} cfg = u
-  { uSnakes = Map.insert name (initSnake (head uSpawns) cfg) uSnakes
-  , uSpawns = tail uSpawns }
+  { uSnakes = Map.insert name (initSnake (head uSpawns) (head uColors) cfg) uSnakes
+  , uSpawns = tail uSpawns
+  , uColors = tail uColors }
 
 -- | Update universe for each frame.
 updateUniverse :: Float -> Universe -> GameConfig -> Universe
@@ -145,8 +148,7 @@ checkSnakeCollision u@Universe{..} cfg@GameConfig{..}
 
 destroySnakes :: [PlayerName] -> Universe -> GameConfig -> Universe
 destroySnakes names u@Universe{..} cfg@GameConfig{..} = u
-  { uSnakes = foldr Map.delete uSnakes names
-  , uDeadLinks = newDeadLinks <> uDeadLinks }
+  { uDeadLinks = newDeadLinks <> uDeadLinks }
   where
     snakes = map snd (filter ((`elem` names) . fst) (Map.toList uSnakes))
     newDeadLinks = concatMap (flip destroySnake cfg) snakes
@@ -157,7 +159,8 @@ respawnSnakes names u@Universe{..} cfg@GameConfig{..} = u
   , uSpawns = drop (length newSnakes) uSpawns
   , uEffects = newEffects <> uEffects }
   where
-    newSnakes = Map.fromList (zip names (map (flip initSnake cfg) uSpawns))
+    respawn name spawn = (name, initSnake spawn (snakeColor (uSnakes Map.! name)) cfg)
+    newSnakes = Map.fromList (zipWith respawn names uSpawns)
     newEffects = map (Effect BonusPhantom bonusPhantomDuration . Just) names
 
 -- | Check snake collision with itself or other snakes.
