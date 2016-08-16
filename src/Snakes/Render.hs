@@ -14,7 +14,7 @@ import Snakes.Model
 renderUniverse :: Universe -> Picture
 renderUniverse Universe{..}
     = foldMap renderDeadLink uDeadLinks
-   <> renderItem (head uItems)
+   <> foldMap renderItem uItems
    <> foldMap (uncurry renderSnake) snakesWithEffects
   where
     getEffects name = map effectType (Map.findWithDefault [] name uEffects)

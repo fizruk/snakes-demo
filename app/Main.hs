@@ -4,6 +4,7 @@ module Main where
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Monad (forever)
+import Control.Monad.Random (evalRand, newStdGen)
 import Graphics.Gloss.Interface.IO.Game
 import System.Exit
 
@@ -11,9 +12,11 @@ import Snakes
 
 main :: IO ()
 main = do
-  u <- randomUniverse
-  initialWorld <- atomically $ newTVar (addPlayer "You" u)
+  u <- spawnPlayer "You" emptyUniverse
+  initialWorld <- atomically $ newTVar u
   addBot "Bot 1" simpleBot initialWorld
+  addBot "Bot 2" simpleBot initialWorld
+  addBot "Bot 3" simpleBot initialWorld
 
   playIO display bgColor fps initialWorld renderWorld handleWorld updateWorld
   where
@@ -25,9 +28,9 @@ main = do
       u <- readTVarIO w
       return (renderUniverse u)
 
-    updateWorld dt w = atomically $ do
-      u <- readTVar w
-      writeTVar w (updateUniverse dt u)
+    updateWorld dt w = do
+      g <- newStdGen
+      atomically $ modifyTVar w (flip evalRand g . updateUniverse dt)
       return w
 
     handleWorld (EventKey (SpecialKey KeyEsc) Down _ _) _ = exitSuccess -- exit on ESC
@@ -42,9 +45,8 @@ main = do
 
 addBot :: PlayerName -> Bot -> TVar Universe -> IO ()
 addBot name bot w = do
-  atomically $ do
-    u <- readTVar w
-    writeTVar w (addPlayer name u)
+  g <- newStdGen
+  atomically $ modifyTVar w (flip evalRand g . spawnPlayer name)
   forkIO $ forever $ do
     threadDelay 1000
     atomically $ do
