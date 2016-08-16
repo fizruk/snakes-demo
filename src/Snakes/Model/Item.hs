@@ -25,11 +25,25 @@ instance Random ItemEffect where
       (x, g') -> (toEnum x, g')
   random g = randomR (minBound, maxBound) g
 
+-- | Duration of an item based on its effect.
+itemDuration :: ItemEffect -> Float
+itemDuration ItemFood = 10
+itemDuration _        = 5
+
+itemColor :: ItemEffect -> Color
+itemColor ItemFood         = white
+itemColor ItemBonusReverse = magenta
+itemColor ItemBonusPhantom = cyan
+
+itemSize :: ItemEffect -> Float
+itemSize ItemFood = 20
+itemSize _        = 10
+
 -- | Create an 'Item' at a given location.
 mkItem :: Point -> ItemEffect -> Item
 mkItem loc eff = Item
   { itemLocation = loc
-  , itemTimeout  = bonusDuration  -- FIXME: should depend on effect
+  , itemTimeout  = itemDuration eff
   , itemEffect   = eff
   }
 

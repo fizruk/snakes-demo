@@ -43,13 +43,13 @@ renderItem :: Item -> Picture
 renderItem Item{..}
   = (core <> ring)
   & translate x y
-  & color white
+  & color (itemColor itemEffect)
   where
     (x, y) = itemLocation
-    ring = renderTimeout (itemTimeout / bonusDuration) bonusSize  -- FIXME: size and duration should depend on effect
+    ring = renderTimeout (itemTimeout / itemDuration itemEffect) (itemSize itemEffect)
     core
-      = renderCore bonusSize 6                          -- FIXME
-      & rotate (degrees itemTurnRate * bonusDuration)   -- FIXME
+      = renderCore (itemSize itemEffect) 6  -- FIXME: magic constant
+      & rotate (degrees itemTurnRate * itemDuration itemEffect)
 
 renderCore :: Float -> Int -> Picture
 renderCore size n

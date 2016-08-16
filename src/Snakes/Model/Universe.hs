@@ -109,7 +109,7 @@ checkItemCollision u@Universe{..} = case fed of
 
 collidesWithItem :: Item -> Snake -> Bool
 collidesWithItem Item{..} Snake{..}
-  = (itemLocation, bonusSize) `collides` (head snakeLinks, snakeLinkSize)   -- FIXME: size should depend on effect
+  = (itemLocation, itemSize itemEffect) `collides` (head snakeLinks, snakeLinkSize)
 
 -- | Check if any snakes collide.
 checkSnakeCollision :: Universe -> Universe
