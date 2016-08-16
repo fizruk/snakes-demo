@@ -35,10 +35,10 @@ snakeLinkSize = 10
 snakeLinkGap  = 11
 snakeSpeed    = 190
 snakeTurnRate = 5
-snakeStartLen = 10
+snakeStartLen = 20
 
 deadLinkDuration = 2
-deadLinkSpeed    = 30
+deadLinkSpeed    = 75
 deadLinkColor    = greyN 0.3
 
 itemTurnRate  = 2

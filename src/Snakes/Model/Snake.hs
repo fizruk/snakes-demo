@@ -79,18 +79,12 @@ feedSnake snake@Snake{..} = snake
 
 -- | Destroy a 'Snake', leaving some floating dead links.
 destroySnake :: Snake -> [DeadLink]
-destroySnake Snake{..} = zipWith mkDeadLink snakeLinks dirs
+destroySnake Snake{..} = map mkDeadLink snakeLinks
   where
-    h = head snakeLinks + snakeDir
-    t = last snakeLinks - snakeDir
-    ls = h : snakeLinks ++ [t]
-    dirs = zipWith3 findDir ls snakeLinks (drop 2 ls)
-    findDir prev curr next = normalizeV ((curr - prev) + (curr - next))
-
-    mkDeadLink loc dir = DeadLink
+    mkDeadLink loc = DeadLink
       { linkLocation = loc
       , linkTimeout  = deadLinkDuration
-      , linkDir      = dir }
+      , linkDir      = normalizeV (loc - head snakeLinks) }
 
 -- | Move 'DeadLink' around and update its timer.
 -- Return 'Nothing' if time's up.
@@ -100,7 +94,6 @@ updateDeadLink dt link@DeadLink{..}
   | otherwise         = Just link
       { linkLocation = linkLocation + mulSV (dt * deadLinkSpeed) linkDir
       , linkTimeout  = linkTimeout - dt }
-
 
 -- | Make snake's tail its head and change direction to where tail is pointed.
 reverseSnake :: Snake -> Snake
