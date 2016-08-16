@@ -5,6 +5,7 @@ import Graphics.Gloss
 -- * General
 
 fieldSize     :: (Float, Float) -- ^ Size of game's field.
+fieldMargin   :: (Float, Float) -- ^ Margin of game's field. Food and bonus items can't pop up near field's border.
 playerColors  :: [Color]        -- ^ Available snake colors.
 
 -- * Snakes
@@ -24,19 +25,10 @@ deadLinkColor     :: Color  -- ^ Color of dead links.
 
 itemTurnRate  :: Float  -- ^ Rotation rate for food and bonus items.
 
-foodDuration  :: Float  -- ^ Default food regeneration interval.
-foodSize      :: Float  -- ^ Radius of a food item.
-
-bonusDuration :: Float  -- ^ Default time before bonus disappears.
-bonusSize     :: Float  -- ^ Radius of a bonus item.
-
--- * Effects
-
-effectPhantomDuration :: Float -- ^ Duration of a phantom bonus effect.
-
 -- NOTE: Values are groupped below for a clearer view.
 
 fieldSize = (700, 700)
+fieldMargin = (50, 50)
 playerColors = map dark [white, red, green, cyan, orange, magenta, yellow]
 
 snakeLinkSize = 10
@@ -49,13 +41,5 @@ deadLinkDuration = 2
 deadLinkSpeed    = 30
 deadLinkColor    = greyN 0.3
 
-foodDuration  = 10
-foodSize      = 20
-
-bonusDuration = 5
-bonusSize     = 10
-
 itemTurnRate  = 2
-
-effectPhantomDuration = 10
 

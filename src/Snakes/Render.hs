@@ -16,15 +16,15 @@ renderUniverse Universe{..}
    <> renderItem (head uItems)
    <> foldMap (uncurry renderSnake) snakesWithEffects
   where
-    getEffects name = map effectType (filter ((== Just name) . effectPlayer) uEffects)
+    getEffects name = map effectType (Map.findWithDefault [] name uEffects)
     snakesWithEffects = map (first getEffects) (Map.toList uSnakes)
 
-renderSnake :: [ItemEffect] -> Snake -> Picture
+renderSnake :: [EffectType] -> Snake -> Picture
 renderSnake effects Snake{..}
   = foldMap renderLink snakeLinks
   & color c
   where
-    c | ItemBonusPhantom `elem` effects = withAlpha 0.5 snakeColor
+    c | EffectPhantom `elem` effects = withAlpha 0.5 snakeColor
       | otherwise = snakeColor
 
 renderLink :: Link -> Picture
@@ -43,13 +43,13 @@ renderItem :: Item -> Picture
 renderItem Item{..}
   = (core <> ring)
   & translate x y
-  & color (itemColor itemEffect)
+  & color (effectColor itemEffect)
   where
     (x, y) = itemLocation
-    ring = renderTimeout (itemTimeout / itemDuration itemEffect) (itemSize itemEffect)
+    ring = renderTimeout (itemTimeout / effectItemDuration itemEffect) (effectItemSize itemEffect)
     core
-      = renderCore (itemSize itemEffect) 6  -- FIXME: magic constant
-      & rotate (degrees itemTurnRate * itemDuration itemEffect)
+      = renderCore (effectItemSize itemEffect) 5  -- FIXME: magic constant
+      & rotate (degrees itemTurnRate * itemTimeout)
 
 renderCore :: Float -> Int -> Picture
 renderCore size n

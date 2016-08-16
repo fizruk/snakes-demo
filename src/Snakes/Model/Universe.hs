@@ -15,6 +15,7 @@ import Graphics.Gloss.Data.Vector
 import System.Random
 
 import Snakes.Config
+import Snakes.Model.Effect
 import Snakes.Model.Item
 import Snakes.Model.Snake
 
@@ -23,26 +24,13 @@ type PlayerName = String
 
 -- | The universe of the The Game of Snakes.
 data Universe = Universe
-  { uSnakes     :: Map PlayerName Snake -- ^ Player's 'Snake'.
-  , uItems      :: [Item]               -- ^ Infinite item source, only the first item is active.
-  , uEffects    :: [Effect]             -- ^ Active bonus effects.
-  , uDeadLinks  :: [DeadLink]           -- ^ Dead links on the field, fading away.
-  , uSpawns     :: [(Point, Vector)]    -- ^ Infinite list of spawn locations and directions.
-  , uColors     :: [Color]              -- ^ Available colors for new players.
+  { uSnakes     :: Map PlayerName Snake     -- ^ Player's 'Snake'.
+  , uItems      :: [Item]                   -- ^ Infinite item source, only the first item is active.
+  , uEffects    :: Map PlayerName [Effect]  -- ^ Active bonus effects.
+  , uDeadLinks  :: [DeadLink]               -- ^ Dead links on the field, fading away.
+  , uSpawns     :: [(Point, Vector)]        -- ^ Infinite list of spawn locations and directions.
+  , uColors     :: [Color]                  -- ^ Available colors for new players.
   }
-
--- | An active effect.
-data Effect = Effect
-  { effectType    :: ItemEffect       -- ^ Effect type.
-  , effectTimeout :: Float            -- ^ Time left.
-  , effectPlayer  :: Maybe PlayerName -- ^ Player under effect.
-  }
-
--- | Update effect's timer.
-updateEffect :: Float -> Effect -> Maybe Effect
-updateEffect dt e@Effect{..}
-  | effectTimeout > dt = Just e { effectTimeout = effectTimeout - dt }
-  | otherwise = Nothing
 
 randomPoints :: Float -> Float -> IO [Point]
 randomPoints w h = do
@@ -53,7 +41,7 @@ randomPoints w h = do
 -- | Generate a random 'Universe'.
 randomUniverse :: IO Universe
 randomUniverse = do
-  itemLocs  <- randomPoints (w - foodSize)  (h - foodSize)
+  itemLocs  <- randomPoints (w - dw)  (h - dh)
   itemEffs  <- randoms <$> newStdGen
   dirs      <- randomPoints 1 1
   let spawnLocs = iterate (rotateV phi) (w/5, h/5)
@@ -62,6 +50,7 @@ randomUniverse = do
     , uSpawns = zip spawnLocs dirs }
   where
     (w, h) = fieldSize
+    (dw, dh) = fieldMargin
     phi = (1 + sqrt(5)) / 2
 
 -- | An empty universe.
@@ -69,7 +58,7 @@ emptyUniverse :: Universe
 emptyUniverse = Universe
   { uSnakes     = Map.empty
   , uItems      = []
-  , uEffects    = []
+  , uEffects    = Map.empty
   , uDeadLinks  = []
   , uSpawns     = []
   , uColors     = cycle playerColors }
@@ -92,7 +81,7 @@ updateUniverseObjects :: Float -> Universe -> Universe
 updateUniverseObjects dt u@Universe{..} = u
   { uSnakes     = Map.map (moveSnake dt) uSnakes
   , uItems      = newItems
-  , uEffects    = mapMaybe (updateEffect dt) uEffects
+  , uEffects    = Map.map (mapMaybe (updateEffect dt)) uEffects
   , uDeadLinks  = mapMaybe (updateDeadLink dt) uDeadLinks }
   where
     newItems = case updateItem dt (head uItems) of
@@ -102,21 +91,21 @@ updateUniverseObjects dt u@Universe{..} = u
 checkItemCollision :: Universe -> Universe
 checkItemCollision u@Universe{..} = case fed of
   Nothing -> u
-  Just (name, _) -> applyItemEffect (itemEffect item) name u { uItems = tail uItems }
+  Just (name, _) -> applyEffect (itemEffect item) name u { uItems = tail uItems }
   where
     item = head uItems
     fed = find (collidesWithItem item . snd) (Map.toList uSnakes)
 
 collidesWithItem :: Item -> Snake -> Bool
 collidesWithItem Item{..} Snake{..}
-  = (itemLocation, itemSize itemEffect) `collides` (head snakeLinks, snakeLinkSize)
+  = (itemLocation, effectItemSize itemEffect) `collides` (head snakeLinks, snakeLinkSize)
 
 -- | Check if any snakes collide.
 checkSnakeCollision :: Universe -> Universe
 checkSnakeCollision u@Universe{..}
   = respawnSnakes dead (destroySnakes dead u)
   where
-    phantoms  = mapMaybe effectPlayer (filter ((== ItemBonusPhantom) . effectType) uEffects)
+    phantoms  = Map.keys (Map.filter (any ((== EffectPhantom) . effectType)) uEffects)
     snakes    = Map.toList (Map.filterWithKey (\k v -> k `notElem` phantoms) uSnakes)
     dead      = map (fst . fst) (filter namedSnakesCollision (splits snakes))
 
@@ -134,11 +123,11 @@ respawnSnakes :: [PlayerName] -> Universe -> Universe
 respawnSnakes names u@Universe{..} = u
   { uSnakes = newSnakes <> uSnakes
   , uSpawns = drop (length newSnakes) uSpawns
-  , uEffects = newEffects <> uEffects }
+  , uEffects = Map.unionWith (<>) newEffects uEffects }
   where
     respawn name spawn = (name, initSnake spawn (snakeColor (uSnakes Map.! name)))
     newSnakes = Map.fromList (zipWith respawn names uSpawns)
-    newEffects = map (Effect ItemBonusPhantom effectPhantomDuration . Just) names
+    newEffects = Map.fromList (zip names (repeat respawnEffects))
 
 -- | Check snake collision with itself or other snakes.
 snakesCollision :: [Snake] -> Snake -> Bool
@@ -158,11 +147,11 @@ collides :: (Point, Float) -> (Point, Float) -> Bool
 collides ((x, y), a) ((u, v), b) = ((a + b) / 2)^2 > (x - u)^2 + (y - v)^2
 
 -- | Apply item effect.
-applyItemEffect :: ItemEffect -> PlayerName -> Universe -> Universe
-applyItemEffect ItemFood name u@Universe{..}
+applyEffect :: EffectType -> PlayerName -> Universe -> Universe
+applyEffect EffectFood name u@Universe{..}
   = u { uSnakes = Map.adjust feedSnake name uSnakes }
-applyItemEffect ItemBonusReverse _ u@Universe{..}
+applyEffect EffectReverse _ u@Universe{..}
   = u { uSnakes = Map.map reverseSnake uSnakes }
-applyItemEffect ItemBonusPhantom name u@Universe{..}
-  = u { uEffects = Effect ItemBonusPhantom effectPhantomDuration (Just name) : uEffects }
+applyEffect ty name u@Universe{..}
+  = u { uEffects = Map.adjust (mkEffect ty :) name uEffects }
 
