@@ -13,19 +13,18 @@ import Snakes.Model
 renderUniverse :: Universe -> Picture
 renderUniverse Universe{..}
     = foldMap renderDeadLink uDeadLinks
-   <> renderFood (head uFood)
-   <> renderBonus (head uBonuses)
+   <> renderItem (head uItems)
    <> foldMap (uncurry renderSnake) snakesWithEffects
   where
     getEffects name = map effectType (filter ((== Just name) . effectPlayer) uEffects)
     snakesWithEffects = map (first getEffects) (Map.toList uSnakes)
 
-renderSnake :: [BonusEffect] -> Snake -> Picture
+renderSnake :: [ItemEffect] -> Snake -> Picture
 renderSnake effects Snake{..}
   = foldMap renderLink snakeLinks
   & color c
   where
-    c | BonusPhantom `elem` effects = withAlpha 0.5 snakeColor
+    c | ItemBonusPhantom `elem` effects = withAlpha 0.5 snakeColor
       | otherwise = snakeColor
 
 renderLink :: Link -> Picture
@@ -40,36 +39,20 @@ renderDeadLink DeadLink{..}
   = renderLink linkLocation
   & color (withAlpha (linkTimeout / deadLinkDuration) deadLinkColor)
 
-renderFood :: Food -> Picture
-renderFood Food{..}
-  = (timeRing <> item)
+renderItem :: Item -> Picture
+renderItem Item{..}
+  = (core <> ring)
   & translate x y
   & color white
   where
-    (x, y) = foodLocation
-    timeRing = renderTimeout (foodTimeout / foodDuration) foodSize
-    item
-      = renderItem foodSize 6
-      & rotate (degrees itemTurnRate * foodTimeout)
+    (x, y) = itemLocation
+    ring = renderTimeout (itemTimeout / bonusDuration) bonusSize  -- FIXME: size and duration should depend on effect
+    core
+      = renderCore bonusSize 6                          -- FIXME
+      & rotate (degrees itemTurnRate * bonusDuration)   -- FIXME
 
-bonusColor :: BonusEffect -> Color
-bonusColor BonusReverse = magenta
-bonusColor BonusPhantom = cyan
-
-renderBonus :: Bonus -> Picture
-renderBonus Bonus{..}
-  = (item <> ring)
-  & translate x y
-  & color (bonusColor bonusEffect)
-  where
-    (x, y) = bonusLocation
-    ring = renderTimeout (bonusTimeout / bonusDuration) bonusSize
-    item
-      = renderItem bonusSize 5
-      & rotate (degrees itemTurnRate * bonusTimeout)
-
-renderItem :: Float -> Int -> Picture
-renderItem size n
+renderCore :: Float -> Int -> Picture
+renderCore size n
   = polygon (take n (iterate (rotateV (2 * pi / fromIntegral n)) (0, r)))
   where
     r = 0.5 * size

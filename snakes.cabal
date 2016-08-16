@@ -21,8 +21,7 @@ library
     Snakes.Config
     Snakes.Control
     Snakes.Model
-    Snakes.Model.Bonus
-    Snakes.Model.Food
+    Snakes.Model.Item
     Snakes.Model.Snake
     Snakes.Model.Universe
     Snakes.Render
