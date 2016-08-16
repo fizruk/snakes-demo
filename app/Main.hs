@@ -51,7 +51,8 @@ addBot name bot w = do
     threadDelay 1000
     atomically $ do
       u <- readTVar w
-      case bot u of
+      case bot name u of
         Just action -> writeTVar w (handleSnakeAction name action u)
         Nothing -> return ()
   return ()
+
