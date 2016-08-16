@@ -25,10 +25,10 @@ instance Random BonusEffect where
   random g = randomR (minBound, maxBound) g
 
 -- | Make a bonus item at a given location with given effect.
-mkBonus :: Point -> BonusEffect -> GameConfig -> Bonus
-mkBonus loc effect GameConfig{..} = Bonus
+mkBonus :: Point -> BonusEffect -> Bonus
+mkBonus loc effect = Bonus
   { bonusLocation = loc
-  , bonusTimeout  = defaultBonusTimeout
+  , bonusTimeout  = bonusDuration
   , bonusEffect   = effect
   }
 

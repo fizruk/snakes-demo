@@ -53,51 +53,51 @@ randomPoints w h = do
   return (zip xs ys)
 
 -- | Generate a random 'Universe'.
-randomUniverse :: GameConfig -> IO Universe
-randomUniverse cfg@GameConfig{..} = do
+randomUniverse :: IO Universe
+randomUniverse = do
   foodLocs  <- randomPoints (w - foodSize)  (h - foodSize)
   bonusLocs <- randomPoints (w - bonusSize) (h - bonusSize)
   effects   <- randoms <$> newStdGen
   dirs      <- randomPoints 1 1
   let spawns = zip (iterate (rotateV phi) (w/5, h/5)) dirs
-  return (initUniverse foodLocs (zip bonusLocs effects) spawns cfg)
+  return (initUniverse foodLocs (zip bonusLocs effects) spawns)
   where
     (w, h) = fieldSize
     phi = (1 + sqrt(5)) / 2
 
 -- | Initial universe.
-initUniverse :: [Point] -> [(Point, BonusEffect)] -> [(Point, Vector)] -> GameConfig -> Universe
+initUniverse :: [Point] -> [(Point, BonusEffect)] -> [(Point, Vector)] -> Universe
 initUniverse ps bs spawns = Universe
-  <$> pure Map.empty
-  <*> traverse mkFood ps
-  <*> traverse (uncurry mkBonus) bs
-  <*> pure []
-  <*> pure []
-  <*> pure spawns
-  <*> fmap cycle snakeColors
+  { uSnakes     = Map.empty
+  , uFood       = map mkFood ps
+  , uBonuses    = map (uncurry mkBonus) bs
+  , uEffects    = []
+  , uDeadLinks  = []
+  , uSpawns     = spawns
+  , uColors     = cycle playerColors }
 
-addPlayer :: PlayerName -> Universe -> GameConfig -> Universe
-addPlayer name u@Universe{..} cfg = u
-  { uSnakes = Map.insert name (initSnake (head uSpawns) (head uColors) cfg) uSnakes
+addPlayer :: PlayerName -> Universe -> Universe
+addPlayer name u@Universe{..} = u
+  { uSnakes = Map.insert name (initSnake (head uSpawns) (head uColors)) uSnakes
   , uSpawns = tail uSpawns
   , uColors = tail uColors }
 
 -- | Update universe for each frame.
-updateUniverse :: Float -> Universe -> GameConfig -> Universe
+updateUniverse :: Float -> Universe -> Universe
 updateUniverse dt
-    = updateUniverseObjects dt
-  >=> checkFoodCollision
-  >=> checkBonusCollision
-  >=> checkSnakeCollision
+  = checkSnakeCollision
+  . checkBonusCollision
+  . checkFoodCollision
+  . updateUniverseObjects dt
 
 -- | Update every object in the universe.
-updateUniverseObjects :: Float -> Universe -> GameConfig -> Universe
-updateUniverseObjects dt u@Universe{..} cfg = u
-  { uSnakes = Map.map (flip (moveSnake dt) cfg) uSnakes
+updateUniverseObjects :: Float -> Universe -> Universe
+updateUniverseObjects dt u@Universe{..} = u
+  { uSnakes = Map.map (moveSnake dt) uSnakes
   , uFood  = newFood
   , uBonuses = newBonuses
   , uEffects = mapMaybe (updateEffect dt) uEffects
-  , uDeadLinks = mapMaybe (flip (updateDeadLink dt) cfg) uDeadLinks }
+  , uDeadLinks = mapMaybe (updateDeadLink dt) uDeadLinks }
   where
     newBonuses = case updateBonus dt (head uBonuses) of
       Nothing -> tail uBonuses
@@ -107,73 +107,73 @@ updateUniverseObjects dt u@Universe{..} cfg = u
       Just f  -> f : tail uFood
 
 -- | Check if snake eats food.
-checkFoodCollision :: Universe -> GameConfig -> Universe
-checkFoodCollision u@Universe{..} cfg = case fed of
+checkFoodCollision :: Universe -> Universe
+checkFoodCollision u@Universe{..} = case fed of
   Nothing -> u
   Just (name, _) -> u
     { uFood = tail uFood
     , uSnakes = Map.adjust feedSnake name uSnakes }
   where
-    collidesWithFood snake = foodCollision snake (head uFood) cfg
+    collidesWithFood snake = foodCollision snake (head uFood)
     fed = find (collidesWithFood . snd) (Map.toList uSnakes)
 
-foodCollision :: Snake -> Food -> GameConfig -> Bool
-foodCollision Snake{..} Food{..} GameConfig{..}
-  = (head snakeLinks, linkSize) `collides` (foodLocation, foodSize)
+foodCollision :: Snake -> Food -> Bool
+foodCollision Snake{..} Food{..}
+  = (head snakeLinks, snakeLinkSize) `collides` (foodLocation, foodSize)
 
-bonusCollision :: Snake -> Bonus -> GameConfig -> Bool
-bonusCollision Snake{..} Bonus{..} GameConfig{..}
-  = (head snakeLinks, linkSize) `collides` (bonusLocation, bonusSize)
+bonusCollision :: Snake -> Bonus -> Bool
+bonusCollision Snake{..} Bonus{..}
+  = (head snakeLinks, snakeLinkSize) `collides` (bonusLocation, bonusSize)
 
-checkBonusCollision :: Universe -> GameConfig -> Universe
-checkBonusCollision u@Universe{..} cfg = case fed of
+checkBonusCollision :: Universe -> Universe
+checkBonusCollision u@Universe{..} = case fed of
   Nothing -> u
-  Just (name, _) -> applyBonusEffect (bonusEffect bonus) name u { uBonuses = tail uBonuses } cfg
+  Just (name, _) -> applyBonusEffect (bonusEffect bonus) name u { uBonuses = tail uBonuses }
   where
     bonus = head uBonuses
-    collidesWithBonus snake = bonusCollision snake bonus cfg
+    collidesWithBonus snake = bonusCollision snake bonus
     fed = find (collidesWithBonus . snd) (Map.toList uSnakes)
 
 -- | Check if any snakes collide.
-checkSnakeCollision :: Universe -> GameConfig -> Universe
-checkSnakeCollision u@Universe{..} cfg@GameConfig{..}
-  = respawnSnakes dead (destroySnakes dead u cfg) cfg
+checkSnakeCollision :: Universe -> Universe
+checkSnakeCollision u@Universe{..}
+  = respawnSnakes dead (destroySnakes dead u)
   where
     phantoms  = mapMaybe effectPlayer (filter ((== BonusPhantom) . effectType) uEffects)
     snakes    = Map.toList (Map.filterWithKey (\k v -> k `notElem` phantoms) uSnakes)
     dead      = map (fst . fst) (filter namedSnakesCollision (splits snakes))
 
-    namedSnakesCollision (s, ss) = snakesCollision (map snd ss) (snd s) cfg
+    namedSnakesCollision (s, ss) = snakesCollision (map snd ss) (snd s)
     splits xs = zip xs (zipWith (++) (inits xs) (tail (tails xs)))
 
-destroySnakes :: [PlayerName] -> Universe -> GameConfig -> Universe
-destroySnakes names u@Universe{..} cfg@GameConfig{..} = u
+destroySnakes :: [PlayerName] -> Universe -> Universe
+destroySnakes names u@Universe{..} = u
   { uDeadLinks = newDeadLinks <> uDeadLinks }
   where
     snakes = map snd (filter ((`elem` names) . fst) (Map.toList uSnakes))
-    newDeadLinks = concatMap (flip destroySnake cfg) snakes
+    newDeadLinks = concatMap destroySnake snakes
 
-respawnSnakes :: [PlayerName] -> Universe -> GameConfig -> Universe
-respawnSnakes names u@Universe{..} cfg@GameConfig{..} = u
+respawnSnakes :: [PlayerName] -> Universe -> Universe
+respawnSnakes names u@Universe{..} = u
   { uSnakes = newSnakes <> uSnakes
   , uSpawns = drop (length newSnakes) uSpawns
   , uEffects = newEffects <> uEffects }
   where
-    respawn name spawn = (name, initSnake spawn (snakeColor (uSnakes Map.! name)) cfg)
+    respawn name spawn = (name, initSnake spawn (snakeColor (uSnakes Map.! name)))
     newSnakes = Map.fromList (zipWith respawn names uSpawns)
-    newEffects = map (Effect BonusPhantom bonusPhantomDuration . Just) names
+    newEffects = map (Effect BonusPhantom effectPhantomDuration . Just) names
 
 -- | Check snake collision with itself or other snakes.
-snakesCollision :: [Snake] -> Snake -> GameConfig -> Bool
-snakesCollision snakes snake cfg
-  = selfCollision snake { snakeLinks = snakeLinks snake ++ otherLinks } cfg
+snakesCollision :: [Snake] -> Snake -> Bool
+snakesCollision snakes snake
+  = selfCollision snake { snakeLinks = snakeLinks snake ++ otherLinks }
   where
     otherLinks = concatMap snakeLinks snakes
 
 -- | Check if snake collides with itself.
-selfCollision :: Snake -> GameConfig -> Bool
-selfCollision Snake{..} GameConfig{..}
-  = any (collides (head snakeLinks, linkSize)) (map (, linkSize) (drop 2 snakeLinks))
+selfCollision :: Snake -> Bool
+selfCollision Snake{..}
+  = any (collides (head snakeLinks, snakeLinkSize)) (map (, snakeLinkSize) (drop 2 snakeLinks))
 
 -- | Check collision for two objects.
 -- Collision counts when objects' are at least halfway into each other.
@@ -181,9 +181,9 @@ collides :: (Point, Float) -> (Point, Float) -> Bool
 collides ((x, y), a) ((u, v), b) = ((a + b) / 2)^2 > (x - u)^2 + (y - v)^2
 
 -- | Apply bonus effect.
-applyBonusEffect :: BonusEffect -> PlayerName -> Universe -> GameConfig -> Universe
-applyBonusEffect BonusReverse _ u@Universe{..} _
+applyBonusEffect :: BonusEffect -> PlayerName -> Universe -> Universe
+applyBonusEffect BonusReverse _ u@Universe{..}
   = u { uSnakes = Map.map reverseSnake uSnakes }
-applyBonusEffect BonusPhantom name u@Universe{..} GameConfig{..}
-  = u { uEffects = Effect BonusPhantom bonusPhantomDuration (Just name) : uEffects }
+applyBonusEffect BonusPhantom name u@Universe{..}
+  = u { uEffects = Effect BonusPhantom effectPhantomDuration (Just name) : uEffects }
 

@@ -26,8 +26,8 @@ data DeadLink = DeadLink
   }
 
 -- | Create a 'Snake' in the initial location.
-initSnake :: (Point, Vector) -> Color -> GameConfig -> Snake
-initSnake (loc, dir) c GameConfig{..} = mkSnake loc dir c initialLen linkDistance
+initSnake :: (Point, Vector) -> Color -> Snake
+initSnake (loc, dir) c = mkSnake loc dir c snakeStartLen snakeLinkGap
 
 -- | @mkSnake n dir dist@ creates a straight 'Snake' with @n@ links,
 -- poiting in @dir@ direction and with head at @(0, 0)@.
@@ -48,8 +48,8 @@ feedSnake snake@Snake{..} = snake
   { snakeLinks = snakeLinks ++ [ last snakeLinks ] }
 
 -- | Destroy a 'Snake', leaving some floating dead links.
-destroySnake :: Snake -> GameConfig -> [DeadLink]
-destroySnake Snake{..} GameConfig{..} = zipWith mkDeadLink snakeLinks dirs
+destroySnake :: Snake -> [DeadLink]
+destroySnake Snake{..} = zipWith mkDeadLink snakeLinks dirs
   where
     h = head snakeLinks + snakeDir
     t = last snakeLinks - snakeDir
@@ -63,49 +63,49 @@ destroySnake Snake{..} GameConfig{..} = zipWith mkDeadLink snakeLinks dirs
       , linkDir      = dir }
 
 -- | Move 'DeadLink' around and update its timer.
-updateDeadLink :: Float -> DeadLink -> GameConfig -> Maybe DeadLink
-updateDeadLink dt link@DeadLink{..} GameConfig{..}
+updateDeadLink :: Float -> DeadLink -> Maybe DeadLink
+updateDeadLink dt link@DeadLink{..}
   | linkTimeout <= dt = Nothing
   | otherwise         = Just link
       { linkLocation = linkLocation + mulSV (dt * deadLinkSpeed) linkDir
       , linkTimeout  = linkTimeout - dt }
 
 -- | Move snake naturally given time delta.
-moveSnake :: Float -> Snake -> GameConfig -> Snake
-moveSnake dt snake@Snake{..} cfg@GameConfig{..} = snake
+moveSnake :: Float -> Snake -> Snake
+moveSnake dt snake@Snake{..} = snake
   { snakeLinks = newLinks
   , snakeDir = newDir }
   where
-    newLinks = moveLinks (mulSV (dt * snakeSpeed) newDir) snakeLinks cfg
-    newDir = adjustDir dt snake cfg
+    newLinks = moveLinks (mulSV (dt * snakeSpeed) newDir) snakeLinks
+    newDir = adjustDir dt snake
 
 -- | Adjust snake's direction to follow its target.
-adjustDir :: Float -> Snake -> GameConfig -> Vector
-adjustDir dt snake@Snake{..} GameConfig{..} =
+adjustDir :: Float -> Snake -> Vector
+adjustDir dt snake@Snake{..} =
   case snakeTarget of
     Nothing     -> snakeDir
     Just target ->
       let
         targetDir   = target - head snakeLinks
         targetAngle = angleVV snakeDir targetDir
-        angle       = min (abs targetAngle) (dt * maxTurnAngle)
+        angle       = min (abs targetAngle) (dt * snakeTurnRate)
         newDir      = rotateV (angle * angleDir snakeDir targetDir) snakeDir
       in newDir
 
 -- | Move head link by a given vector and then move other links.
-moveLinks :: Vector -> [Link] -> GameConfig -> [Link]
-moveLinks _ [] _ = []
-moveLinks dir (l:ls) cfg = moveLinks' (l + dir) ls
+moveLinks :: Vector -> [Link] -> [Link]
+moveLinks _ [] = []
+moveLinks dir (l:ls) = moveLinks' (l + dir) ls
   where
     moveLinks' pos [] = [pos]
-    moveLinks' pos (n:ns) = pos : moveLinks' (moveLinkTo pos n cfg) ns
+    moveLinks' pos (n:ns) = pos : moveLinks' (moveLinkTo pos n) ns
 
 -- | Move a single link closer to a given point.
 -- Leave link be if already close enough.
-moveLinkTo :: Point -> Link -> GameConfig -> Link
-moveLinkTo pos link GameConfig{..}
-  | magV (pos - link) < linkDistance = link
-  | otherwise = pos - mulSV linkDistance (normalizeV (pos - link))
+moveLinkTo :: Point -> Link -> Link
+moveLinkTo pos link
+  | magV (pos - link) < snakeLinkGap = link
+  | otherwise = pos - mulSV snakeLinkGap (normalizeV (pos - link))
 
 -- | Compute an angular direction between two vectors.
 angleDir :: Vector -> Vector -> Float

@@ -13,10 +13,10 @@ data Food = Food
   }
 
 -- | Make a food item at a given location.
-mkFood :: Point -> GameConfig -> Food
-mkFood loc GameConfig{..} = Food
+mkFood :: Point -> Food
+mkFood loc = Food
   { foodLocation = loc
-  , foodTimeout  = defaultFoodTimeout
+  , foodTimeout  = foodDuration
   }
 
 -- | Update food item's timer.
