@@ -33,9 +33,9 @@ playerColors = map dark [white, red, green, cyan, orange, magenta, yellow]
 
 snakeLinkSize = 10
 snakeLinkGap  = 11
-snakeSpeed    = 160
+snakeSpeed    = 190
 snakeTurnRate = 5
-snakeStartLen = 3
+snakeStartLen = 10
 
 deadLinkDuration = 2
 deadLinkSpeed    = 30

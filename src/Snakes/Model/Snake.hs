@@ -1,9 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE PatternGuards #-}
 module Snakes.Model.Snake where
 
-import Graphics.Gloss.Data.Color
-import Graphics.Gloss.Data.Point
+import Graphics.Gloss
 import Graphics.Gloss.Data.Vector
 import Snakes.Config
 
@@ -15,6 +13,9 @@ data Snake = Snake
   , snakeColor  :: Color        -- ^ Color of the snake.
   }
 
+-- | A location and direction for a newly spawned 'Snake'.
+type Spawn = (Point, Vector)
+
 -- | A single link of a 'Snake'.
 type Link = Point
 
@@ -25,22 +26,51 @@ data DeadLink = DeadLink
   , linkDir       :: Vector   -- ^ Direction of flow.
   }
 
--- | Create a 'Snake' in the initial location.
-initSnake :: (Point, Vector) -> Color -> Snake
-initSnake (loc, dir) c = mkSnake loc dir c snakeStartLen snakeLinkGap
-
--- | @mkSnake n dir dist@ creates a straight 'Snake' with @n@ links,
--- poiting in @dir@ direction and with head at @(0, 0)@.
--- Initial length distance is @dist@.
-mkSnake :: Point -> Vector -> Color -> Int -> Float -> Snake
-mkSnake loc dir c n dist = Snake
-  { snakeLinks  = take n (iterate (subtract step) loc)
+-- | Spawn a fresh 'Snake'.
+spawnSnake :: Spawn -> Color -> Snake
+spawnSnake (loc, dir) c = Snake
+  { snakeLinks  = take snakeStartLen (iterate (subtract step) loc)
   , snakeDir    = d
   , snakeTarget = Nothing
   , snakeColor  = c }
   where
-    step = mulSV dist d
     d = normalizeV dir
+    step = mulSV snakeLinkGap d
+
+-- | Move 'Snake'.
+-- First adjust its direction to follow the target.
+-- Then move head along that direction and drag all other links naturally.
+moveSnake :: Float -> Snake -> Snake
+moveSnake dt snake@Snake{..} = snake
+  { snakeLinks = newLinks
+  , snakeDir = newDir }
+  where
+    newDir = maybe snakeDir followTarget snakeTarget
+    newLinks = moveLinks (mulSV (dt * snakeSpeed) newDir) snakeLinks
+
+    -- | Adjust direction to follow target.
+    followTarget :: Point -> Vector
+    followTarget target = rotateV (sign * angle) snakeDir
+      where
+        targetDir   = target - head snakeLinks
+        targetAngle = angleVV snakeDir targetDir
+        sign        = angleDir snakeDir targetDir
+        angle       = min targetAngle (dt * snakeTurnRate)
+
+    -- | Compute an angular direction between two vectors.
+    angleDir :: Vector -> Vector -> Float
+    angleDir (x, y) (u, v) = signum (x * v - y * u)
+
+    -- | Move head link by a given vector and then move other links.
+    moveLinks :: Vector -> [Link] -> [Link]
+    moveLinks dir ls = (head ls + dir) : zipWith moveLinkTo ls (tail ls)
+
+    -- | Move a single link closer to a given point.
+    -- Don't move if already close enough (i.e. within 'snakeLinkGap').
+    moveLinkTo :: Point -> Link -> Link
+    moveLinkTo pos link
+      | magV (pos - link) < snakeLinkGap = link
+      | otherwise = pos - mulSV snakeLinkGap (normalizeV (pos - link))
 
 -- | Feed a snake effectively making it one link longer.
 feedSnake :: Snake -> Snake
@@ -63,6 +93,7 @@ destroySnake Snake{..} = zipWith mkDeadLink snakeLinks dirs
       , linkDir      = dir }
 
 -- | Move 'DeadLink' around and update its timer.
+-- Return 'Nothing' if time's up.
 updateDeadLink :: Float -> DeadLink -> Maybe DeadLink
 updateDeadLink dt link@DeadLink{..}
   | linkTimeout <= dt = Nothing
@@ -70,53 +101,12 @@ updateDeadLink dt link@DeadLink{..}
       { linkLocation = linkLocation + mulSV (dt * deadLinkSpeed) linkDir
       , linkTimeout  = linkTimeout - dt }
 
--- | Move snake naturally given time delta.
-moveSnake :: Float -> Snake -> Snake
-moveSnake dt snake@Snake{..} = snake
-  { snakeLinks = newLinks
-  , snakeDir = newDir }
-  where
-    newLinks = moveLinks (mulSV (dt * snakeSpeed) newDir) snakeLinks
-    newDir = adjustDir dt snake
 
--- | Adjust snake's direction to follow its target.
-adjustDir :: Float -> Snake -> Vector
-adjustDir dt snake@Snake{..} =
-  case snakeTarget of
-    Nothing     -> snakeDir
-    Just target ->
-      let
-        targetDir   = target - head snakeLinks
-        targetAngle = angleVV snakeDir targetDir
-        angle       = min (abs targetAngle) (dt * snakeTurnRate)
-        newDir      = rotateV (angle * angleDir snakeDir targetDir) snakeDir
-      in newDir
-
--- | Move head link by a given vector and then move other links.
-moveLinks :: Vector -> [Link] -> [Link]
-moveLinks _ [] = []
-moveLinks dir (l:ls) = moveLinks' (l + dir) ls
-  where
-    moveLinks' pos [] = [pos]
-    moveLinks' pos (n:ns) = pos : moveLinks' (moveLinkTo pos n) ns
-
--- | Move a single link closer to a given point.
--- Leave link be if already close enough.
-moveLinkTo :: Point -> Link -> Link
-moveLinkTo pos link
-  | magV (pos - link) < snakeLinkGap = link
-  | otherwise = pos - mulSV snakeLinkGap (normalizeV (pos - link))
-
--- | Compute an angular direction between two vectors.
-angleDir :: Vector -> Vector -> Float
-angleDir (x, y) (u, v) = signum (x * v - y * u)
-
--- | Make snake's tail its head, change direction and remove target.
+-- | Make snake's tail its head and change direction to where tail is pointed.
 reverseSnake :: Snake -> Snake
 reverseSnake snake@Snake{..} = snake
   { snakeLinks  = newLinks
-  , snakeDir    = normalizeV (a - b)
-  , snakeTarget = Nothing }
+  , snakeDir    = normalizeV (a - b) }
   where
     newLinks = reverse snakeLinks
     a:b:_ = newLinks

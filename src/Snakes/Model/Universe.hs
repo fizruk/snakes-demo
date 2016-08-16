@@ -2,9 +2,6 @@
 {-# LANGUAGE TupleSections #-}
 module Snakes.Model.Universe where
 
-import Control.Applicative
-import Control.Monad
-import Data.Traversable
 import Data.List (find, inits, tails)
 import Data.Maybe (mapMaybe)
 import Data.Map (Map)
@@ -65,7 +62,7 @@ emptyUniverse = Universe
 
 addPlayer :: PlayerName -> Universe -> Universe
 addPlayer name u@Universe{..} = u
-  { uSnakes = Map.insert name (initSnake (head uSpawns) (head uColors)) uSnakes
+  { uSnakes = Map.insert name (spawnSnake (head uSpawns) (head uColors)) uSnakes
   , uSpawns = tail uSpawns
   , uColors = tail uColors }
 
@@ -106,7 +103,7 @@ checkSnakeCollision u@Universe{..}
   = respawnSnakes dead (destroySnakes dead u)
   where
     phantoms  = Map.keys (Map.filter (any ((== EffectPhantom) . effectType)) uEffects)
-    snakes    = Map.toList (Map.filterWithKey (\k v -> k `notElem` phantoms) uSnakes)
+    snakes    = Map.toList (Map.filterWithKey (\k _ -> k `notElem` phantoms) uSnakes)
     dead      = map (fst . fst) (filter namedSnakesCollision (splits snakes))
 
     namedSnakesCollision (s, ss) = snakesCollision (map snd ss) (snd s)
@@ -125,7 +122,7 @@ respawnSnakes names u@Universe{..} = u
   , uSpawns = drop (length newSnakes) uSpawns
   , uEffects = Map.unionWith (<>) newEffects uEffects }
   where
-    respawn name spawn = (name, initSnake spawn (snakeColor (uSnakes Map.! name)))
+    respawn name spawn = (name, spawnSnake spawn (snakeColor (uSnakes Map.! name)))
     newSnakes = Map.fromList (zipWith respawn names uSpawns)
     newEffects = Map.fromList (zip names (repeat respawnEffects))
 
@@ -153,5 +150,4 @@ applyEffect EffectFood name u@Universe{..}
 applyEffect EffectReverse _ u@Universe{..}
   = u { uSnakes = Map.map reverseSnake uSnakes }
 applyEffect ty name u@Universe{..}
-  = u { uEffects = Map.adjust (mkEffect ty :) name uEffects }
-
+  = u { uEffects = Map.insertWith (<>) name [mkEffect ty] uEffects }

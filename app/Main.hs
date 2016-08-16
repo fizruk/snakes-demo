@@ -14,10 +14,6 @@ main = do
   u <- randomUniverse
   initialWorld <- atomically $ newTVar (addPlayer "You" u)
   addBot "Bot 1" simpleBot initialWorld
-  addBot "Bot 2" simpleBot initialWorld
-  addBot "Bot 3" simpleBot initialWorld
-  addBot "Bot 4" simpleBot initialWorld
-  addBot "Bot 5" simpleBot initialWorld
 
   playIO display bgColor fps initialWorld renderWorld handleWorld updateWorld
   where
