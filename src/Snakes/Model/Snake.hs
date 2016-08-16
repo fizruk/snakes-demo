@@ -22,7 +22,7 @@ type Link = Point
 -- | A dead snake's link, slowly fading away.
 data DeadLink = DeadLink
   { linkLocation  :: Point    -- ^ Current location of the link.
-  , linkTimeout   :: Float    -- ^ Time until complete fade out.
+  , linkTimeout   :: Float    -- ^ Time until complete fade out (in seconds).
   , linkDir       :: Vector   -- ^ Direction of flow.
   }
 

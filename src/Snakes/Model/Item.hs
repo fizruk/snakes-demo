@@ -2,13 +2,12 @@
 module Snakes.Model.Item where
 
 import Graphics.Gloss
-import Snakes.Config
 import Snakes.Model.Effect
 
 -- | A food or bonus item.
 data Item = Item
   { itemLocation :: Point       -- ^ Where is the item.
-  , itemTimeout  :: Float       -- ^ How long until item disappears.
+  , itemTimeout  :: Float       -- ^ How long until item disappears (in seconds).
   , itemEffect   :: EffectType  -- ^ What this item does if eaten by a snake.
   }
 

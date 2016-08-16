@@ -10,6 +10,7 @@ import Graphics.Gloss.Data.Vector
 import Snakes.Config
 import Snakes.Model
 
+-- | Render the whole 'Universe'.
 renderUniverse :: Universe -> Picture
 renderUniverse Universe{..}
     = foldMap renderDeadLink uDeadLinks
@@ -19,6 +20,7 @@ renderUniverse Universe{..}
     getEffects name = map effectType (Map.findWithDefault [] name uEffects)
     snakesWithEffects = map (first getEffects) (Map.toList uSnakes)
 
+-- | Render 'Snake' considering its active 'Effects'.
 renderSnake :: [EffectType] -> Snake -> Picture
 renderSnake effects Snake{..}
   = foldMap renderLink snakeLinks
@@ -27,6 +29,7 @@ renderSnake effects Snake{..}
     c | EffectPhantom `elem` effects = withAlpha 0.5 snakeColor
       | otherwise = snakeColor
 
+-- | Render a single snake link.
 renderLink :: Link -> Picture
 renderLink (x, y)
   = thickCircle r r
@@ -34,11 +37,13 @@ renderLink (x, y)
   where
     r = snakeLinkSize * 2/3
 
+-- | Render a 'DeadLink'.
 renderDeadLink :: DeadLink -> Picture
 renderDeadLink DeadLink{..}
   = renderLink linkLocation
   & color (withAlpha (linkTimeout / deadLinkDuration) deadLinkColor)
 
+-- | Render a food or bonus 'Item'.
 renderItem :: Item -> Picture
 renderItem Item{..}
   = (core <> ring)
@@ -51,12 +56,14 @@ renderItem Item{..}
       = renderCore (effectItemSize itemEffect) 5  -- FIXME: magic constant
       & rotate (degrees itemTurnRate * itemTimeout)
 
+-- | Render 'Item's core.
 renderCore :: Float -> Int -> Picture
 renderCore size n
   = polygon (take n (iterate (rotateV (2 * pi / fromIntegral n)) (0, r)))
   where
     r = 0.5 * size
 
+-- | Render timeout ring of a given size.
 renderTimeout :: Float -> Float -> Picture
 renderTimeout x size
   = arc 0 (360 * x) size

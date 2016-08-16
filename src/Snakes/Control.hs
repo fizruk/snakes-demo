@@ -6,11 +6,14 @@ import Graphics.Gloss
 import Snakes.Model
 
 -- | Possible user actions.
-data Action
-  = RedirectSnake Point   -- ^ Point snake's head in a different direction.
+data SnakeAction
+  = SnakeRedirect Point   -- ^ Point snake's head in a different direction.
 
-handleAction :: Action -> Snake -> Snake
-handleAction (RedirectSnake pos) snake = snake { snakeTarget = Just pos }
+-- | Apply 'SnakeAction' to a 'Snake'.
+applySnakeAction :: SnakeAction -> Snake -> Snake
+applySnakeAction (SnakeRedirect pos) snake = snake { snakeTarget = Just pos }
 
-handlePlayerAction :: PlayerName -> Action -> Universe -> Universe
-handlePlayerAction name action u@Universe{..} = u { uSnakes = Map.adjust (handleAction action) name uSnakes }
+-- | Apply 'SnakeAction' to player's 'Snake'.
+handleSnakeAction :: PlayerName -> SnakeAction -> Universe -> Universe
+handleSnakeAction name action u@Universe{..}
+  = u { uSnakes = Map.adjust (applySnakeAction action) name uSnakes }

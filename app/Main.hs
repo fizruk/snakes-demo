@@ -33,7 +33,7 @@ main = do
     handleWorld (EventKey (SpecialKey KeyEsc) Down _ _) _ = exitSuccess -- exit on ESC
     handleWorld (EventMotion mouse) w = atomically $ do
       u <- readTVar w
-      writeTVar w (handlePlayerAction "You" (RedirectSnake mouse) u)
+      writeTVar w (handleSnakeAction "You" (SnakeRedirect mouse) u)
       return w
     handleWorld _ w = return w
 
@@ -50,6 +50,6 @@ addBot name bot w = do
     atomically $ do
       u <- readTVar w
       case bot u of
-        Just action -> writeTVar w (handlePlayerAction name action u)
+        Just action -> writeTVar w (handleSnakeAction name action u)
         Nothing -> return ()
   return ()

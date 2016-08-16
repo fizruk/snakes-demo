@@ -2,7 +2,7 @@
 {-# LANGUAGE TupleSections #-}
 module Snakes.Model.Universe where
 
-import Data.List (find, inits, tails)
+import Data.List (inits, tails)
 import Data.Maybe (mapMaybe)
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -29,27 +29,6 @@ data Universe = Universe
   , uColors     :: [Color]                  -- ^ Available colors for new players.
   }
 
-randomPoints :: Float -> Float -> IO [Point]
-randomPoints w h = do
-  xs <- randomRs (-w/2, w/2) <$> newStdGen
-  ys <- randomRs (-h/2, h/2) <$> newStdGen
-  return (zip xs ys)
-
--- | Generate a random 'Universe'.
-randomUniverse :: IO Universe
-randomUniverse = do
-  itemLocs  <- randomPoints (w - dw)  (h - dh)
-  itemEffs  <- randoms <$> newStdGen
-  dirs      <- randomPoints 1 1
-  let spawnLocs = iterate (rotateV phi) (w/5, h/5)
-  return emptyUniverse
-    { uItems  = zipWith mkItem itemLocs itemEffs
-    , uSpawns = zip spawnLocs dirs }
-  where
-    (w, h) = fieldSize
-    (dw, dh) = fieldMargin
-    phi = (1 + sqrt(5)) / 2
-
 -- | An empty universe.
 emptyUniverse :: Universe
 emptyUniverse = Universe
@@ -60,6 +39,27 @@ emptyUniverse = Universe
   , uSpawns     = []
   , uColors     = cycle playerColors }
 
+-- | Generate a random 'Universe'.
+randomUniverse :: IO Universe
+randomUniverse = do
+  itemLocs  <- uncurry randomPoints (fieldSize - fieldMargin)
+  itemEffs  <- randoms <$> newStdGen
+  dirs      <- randomPoints 1 1
+  return emptyUniverse
+    { uItems  = zipWith mkItem itemLocs itemEffs
+    , uSpawns = zip spawnLocs dirs }
+  where
+    -- a hidden flower
+    spawnLocs = iterate (rotateV (2 * pi / phi)) (mulSV 0.2 fieldSize)
+    phi = (1 + sqrt(5)) / 2
+
+    -- generate random points in an area of given size
+    randomPoints w h = do
+      xs <- randomRs (-w/2, w/2) <$> newStdGen
+      ys <- randomRs (-h/2, h/2) <$> newStdGen
+      return (zip xs ys)
+
+-- | Spawn a new player in the 'Universe'.
 addPlayer :: PlayerName -> Universe -> Universe
 addPlayer name u@Universe{..} = u
   { uSnakes = Map.insert name (spawnSnake (head uSpawns) (head uColors)) uSnakes
@@ -73,6 +73,8 @@ updateUniverse dt
   . checkItemCollision
   . updateUniverseObjects dt
 
+-- * Helpers
+
 -- | Update every object in the universe.
 updateUniverseObjects :: Float -> Universe -> Universe
 updateUniverseObjects dt u@Universe{..} = u
@@ -85,22 +87,25 @@ updateUniverseObjects dt u@Universe{..} = u
       Nothing -> tail uItems
       Just b  -> b : tail uItems
 
+-- | Check if a 'Snake' eats an 'Item'.
+-- If yes — apply its effect.
 checkItemCollision :: Universe -> Universe
-checkItemCollision u@Universe{..} = case fed of
-  Nothing -> u
-  Just (name, _) -> applyEffect (itemEffect item) name u { uItems = tail uItems }
+checkItemCollision u@Universe{..} = case Map.keys fed of
+    (name:_) -> applyEffect (itemEffect item) name u { uItems = tail uItems }
+    [] -> u
   where
     item = head uItems
-    fed = find (collidesWithItem item . snd) (Map.toList uSnakes)
+    fed = Map.filter (collidesWithItem item) uSnakes
 
+-- | Check if a 'Snake' collides with an 'Item'.
 collidesWithItem :: Item -> Snake -> Bool
 collidesWithItem Item{..} Snake{..}
   = (itemLocation, effectItemSize itemEffect) `collides` (head snakeLinks, snakeLinkSize)
 
--- | Check if any snakes collide.
+-- | Check if any 'Snake's collide with other 'Snake's or themselves.
 checkSnakeCollision :: Universe -> Universe
 checkSnakeCollision u@Universe{..}
-  = respawnSnakes dead (destroySnakes dead u)
+  = respawnSnakes dead u
   where
     phantoms  = Map.keys (Map.filter (any ((== EffectPhantom) . effectType)) uEffects)
     snakes    = Map.toList (Map.filterWithKey (\k _ -> k `notElem` phantoms) uSnakes)
@@ -109,31 +114,26 @@ checkSnakeCollision u@Universe{..}
     namedSnakesCollision (s, ss) = snakesCollision (map snd ss) (snd s)
     splits xs = zip xs (zipWith (++) (inits xs) (tail (tails xs)))
 
-destroySnakes :: [PlayerName] -> Universe -> Universe
-destroySnakes names u@Universe{..} = u
-  { uDeadLinks = newDeadLinks <> uDeadLinks }
-  where
-    snakes = map snd (filter ((`elem` names) . fst) (Map.toList uSnakes))
-    newDeadLinks = concatMap destroySnake snakes
-
+-- | Respawn 'Snake's of listed players and leave 'DeadLink's where dead body is.
 respawnSnakes :: [PlayerName] -> Universe -> Universe
 respawnSnakes names u@Universe{..} = u
-  { uSnakes = newSnakes <> uSnakes
-  , uSpawns = drop (length newSnakes) uSpawns
-  , uEffects = Map.unionWith (<>) newEffects uEffects }
+  { uSnakes     = newSnakes <> uSnakes
+  , uSpawns     = drop (length newSnakes) uSpawns
+  , uEffects    = Map.unionWith (<>) newEffects uEffects
+  , uDeadLinks  = newDeadLinks <> uDeadLinks }
   where
     respawn name spawn = (name, spawnSnake spawn (snakeColor (uSnakes Map.! name)))
     newSnakes = Map.fromList (zipWith respawn names uSpawns)
     newEffects = Map.fromList (zip names (repeat respawnEffects))
+    newDeadLinks = foldMap destroySnake (Map.filterWithKey (\k _ -> k `elem` names) uSnakes)
 
 -- | Check snake collision with itself or other snakes.
 snakesCollision :: [Snake] -> Snake -> Bool
 snakesCollision snakes snake
-  = selfCollision snake { snakeLinks = snakeLinks snake ++ otherLinks }
-  where
-    otherLinks = concatMap snakeLinks snakes
+  = selfCollision snake { snakeLinks = concatMap snakeLinks (snake : snakes) }
 
 -- | Check if snake collides with itself.
+-- Collision with second link does not count since it is attached to the head.
 selfCollision :: Snake -> Bool
 selfCollision Snake{..}
   = any (collides (head snakeLinks, snakeLinkSize)) (map (, snakeLinkSize) (drop 2 snakeLinks))
@@ -151,3 +151,4 @@ applyEffect EffectReverse _ u@Universe{..}
   = u { uSnakes = Map.map reverseSnake uSnakes }
 applyEffect ty name u@Universe{..}
   = u { uEffects = Map.insertWith (<>) name [mkEffect ty] uEffects }
+

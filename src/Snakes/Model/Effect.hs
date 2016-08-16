@@ -27,7 +27,7 @@ effectItemDuration :: EffectType -> Float
 effectItemDuration EffectFood = 10
 effectItemDuration _          = 5
 
--- | Duration of an effect when activated.
+-- | Duration of an effect when activated (in seconds).
 effectDuration :: EffectType -> Float
 effectDuration EffectPhantom = 10
 effectDuration _             = 0
