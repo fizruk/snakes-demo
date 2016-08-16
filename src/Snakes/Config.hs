@@ -23,7 +23,8 @@ deadLinkColor     :: Color  -- ^ Color of dead links.
 
 -- * Food and bonuses
 
-itemTurnRate  :: Float  -- ^ Rotation rate for food and bonus items.
+itemTurnRate    :: Float  -- ^ Rotation rate for food and bonus items.
+itemActiveTotal :: Int    -- ^ Number of simultaneously active items.
 
 -- NOTE: Values are groupped below for a clearer view.
 
@@ -41,5 +42,5 @@ deadLinkDuration = 2
 deadLinkSpeed    = 75
 deadLinkColor    = greyN 0.3
 
-itemTurnRate  = 2
-
+itemTurnRate    = 2
+itemActiveTotal = 3

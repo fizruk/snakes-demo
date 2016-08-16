@@ -22,7 +22,7 @@ type PlayerName = String
 -- | The universe of the The Game of Snakes.
 data Universe = Universe
   { uSnakes     :: Map PlayerName Snake     -- ^ Player's 'Snake'.
-  , uItems      :: [Item]                   -- ^ Infinite item source, only the first item is active.
+  , uItems      :: [Item]                   -- ^ Active items.
   , uEffects    :: Map PlayerName [Effect]  -- ^ Active bonus effects.
   , uDeadLinks  :: [DeadLink]               -- ^ Dead links on the field, fading away.
   , uColors     :: [Color]                  -- ^ Available colors for new players.
@@ -56,7 +56,7 @@ updateUniverseObjects dt u@Universe{..} = do
   items <- randomItems
   return u
     { uSnakes     = Map.map (moveSnake dt) uSnakes
-    , uItems      = newItems <> take (1 - length newItems) items
+    , uItems      = newItems <> take (itemActiveTotal - length newItems) items
     , uEffects    = Map.map (mapMaybe (updateEffect dt)) uEffects
     , uDeadLinks  = mapMaybe (updateDeadLink dt) uDeadLinks }
   where
