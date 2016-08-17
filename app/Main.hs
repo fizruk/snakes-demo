@@ -14,9 +14,9 @@ main :: IO ()
 main = do
   u <- spawnPlayer "You" emptyUniverse
   initialWorld <- atomically $ newTVar u
-  addBot "Bot 1" simpleBot initialWorld
-  addBot "Bot 2" simpleBot initialWorld
-  addBot "Bot 3" simpleBot initialWorld
+  spawnBot "Bot 1" simpleBot initialWorld
+  spawnBot "Bot 2" simpleBot initialWorld
+  spawnBot "Bot 3" simpleBot initialWorld
 
   playIO display bgColor fps initialWorld renderWorld handleWorld updateWorld
   where
@@ -43,8 +43,9 @@ main = do
     (fieldWidth, fieldHeight) = fieldSize
     (w, h) = (floor fieldWidth, floor fieldHeight)
 
-addBot :: PlayerName -> Bot -> TVar Universe -> IO ()
-addBot name bot w = do
+-- | Add a bot to the 'Universe'.
+spawnBot :: PlayerName -> Bot -> TVar Universe -> IO ()
+spawnBot name bot w = do
   g <- newStdGen
   atomically $ modifyTVar w (flip evalRand g . spawnPlayer name)
   forkIO $ forever $ do
@@ -55,4 +56,3 @@ addBot name bot w = do
         Just action -> writeTVar w (handleSnakeAction name action u)
         Nothing -> return ()
   return ()
-

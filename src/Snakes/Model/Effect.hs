@@ -19,8 +19,8 @@ instance Random EffectType where
 
 -- | Item size for an effect.
 effectItemSize :: EffectType -> Float
-effectItemSize EffectFood = 20
-effectItemSize _          = 10
+effectItemSize EffectFood = 15
+effectItemSize _          = 7
 
 -- | Duration of an item based on its effect (in seconds).
 effectItemDuration :: EffectType -> Float

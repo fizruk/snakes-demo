@@ -32,11 +32,11 @@ fieldSize = (700, 700)
 fieldMargin = (50, 50)
 playerColors = map dark [white, red, green, cyan, orange, magenta, yellow]
 
-snakeLinkSize = 10
-snakeLinkGap  = 11
-snakeSpeed    = 190
-snakeTurnRate = 5
-snakeStartLen = 20
+snakeLinkSize = 7
+snakeLinkGap  = 7.5
+snakeSpeed    = 150
+snakeTurnRate = 8
+snakeStartLen = 5
 
 deadLinkDuration = 2
 deadLinkSpeed    = 75

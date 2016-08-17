@@ -17,3 +17,4 @@ applySnakeAction (SnakeRedirect pos) snake = snake { snakeTarget = Just pos }
 handleSnakeAction :: PlayerName -> SnakeAction -> Universe -> Universe
 handleSnakeAction name action u@Universe{..}
   = u { uSnakes = Map.adjust (applySnakeAction action) name uSnakes }
+
