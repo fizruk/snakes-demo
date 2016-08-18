@@ -1,6 +1,9 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 module Snakes.Model.Snake where
 
+import Data.Binary
+import GHC.Generics
 import Graphics.Gloss
 import Graphics.Gloss.Data.Vector
 import Snakes.Config
@@ -11,7 +14,15 @@ data Snake = Snake
   , snakeDir    :: Vector       -- ^ Snake's direction is a normalized vector.
   , snakeTarget :: Maybe Point  -- ^ Snake's target position.
   , snakeColor  :: Color        -- ^ Color of the snake.
-  }
+  } deriving (Generic)
+
+instance Binary Color where
+  put = put . rgbaOfColor
+  get = uncurry4 makeColor <$> get
+    where
+      uncurry4 f (a, b, c, d) = f a b c d
+
+instance Binary Snake
 
 -- | A location and direction for a newly spawned 'Snake'.
 type Spawn = (Point, Vector)
@@ -24,7 +35,9 @@ data DeadLink = DeadLink
   { linkLocation  :: Point    -- ^ Current location of the link.
   , linkTimeout   :: Float    -- ^ Time until complete fade out (in seconds).
   , linkDir       :: Vector   -- ^ Direction of flow.
-  }
+  } deriving (Generic)
+
+instance Binary DeadLink
 
 -- | Spawn a fresh 'Snake'.
 spawnSnake :: Spawn -> Color -> Snake

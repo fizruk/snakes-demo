@@ -1,6 +1,9 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 module Snakes.Model.Item where
 
+import Data.Binary
+import GHC.Generics
 import Graphics.Gloss
 import Snakes.Model.Effect
 
@@ -9,7 +12,9 @@ data Item = Item
   { itemLocation :: Point       -- ^ Where is the item.
   , itemTimeout  :: Float       -- ^ How long until item disappears (in seconds).
   , itemEffect   :: EffectType  -- ^ What this item does if eaten by a snake.
-  }
+  } deriving (Generic)
+
+instance Binary Item
 
 -- | Create an 'Item' at a given location.
 mkItem :: Point -> EffectType -> Item

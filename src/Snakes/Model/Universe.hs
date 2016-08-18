@@ -1,20 +1,25 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 module Snakes.Model.Universe where
 
 import Control.Monad
 import Control.Monad.Random
+import Data.Binary
 import Data.List (inits, tails)
 import Data.Maybe
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Monoid
+import GHC.Generics
 import Graphics.Gloss
 
 import Snakes.Config
 import Snakes.Model.Effect
 import Snakes.Model.Item
 import Snakes.Model.Snake
+
+import Network.WebSockets
 
 -- | Player's or bot's name.
 type PlayerName = String
@@ -26,7 +31,9 @@ data Universe = Universe
   , uEffects    :: Map PlayerName [Effect]  -- ^ Active bonus effects.
   , uDeadLinks  :: [DeadLink]               -- ^ Dead links on the field, fading away.
   , uColors     :: [Color]                  -- ^ Available colors for new players.
-  }
+  } deriving (Generic)
+
+instance Binary Universe
 
 -- | An empty universe.
 emptyUniverse :: Universe
@@ -35,11 +42,18 @@ emptyUniverse = Universe
   , uItems      = []
   , uEffects    = Map.empty
   , uDeadLinks  = []
-  , uColors     = cycle playerColors }
+  , uColors     = playerColors }
 
 -- | Spawn a new player in the 'Universe'.
 spawnPlayer :: MonadRandom m => PlayerName -> Universe -> m Universe
 spawnPlayer = respawnSnake
+
+-- | Remove player from the 'Universe'.
+kickPlayer :: PlayerName -> Universe -> Universe
+kickPlayer name u@Universe{..} = u
+  { uSnakes  = Map.delete name uSnakes
+  , uEffects = Map.delete name uEffects
+  , uColors  = uColors ++ map snakeColor (maybeToList (Map.lookup name uSnakes)) }
 
 -- | Update universe for each frame.
 updateUniverse :: MonadRandom m => Float -> Universe -> m Universe
@@ -159,3 +173,14 @@ randomSpawn :: MonadRandom m => m Spawn
 randomSpawn = (,)
   <$> fmap head randomPoints  -- location
   <*> fmap head randomPoints  -- direction
+
+-- =====================================
+-- WebSockersData instances are needed
+-- to send/receive Haskell structures
+-- over websockets
+-- =====================================
+
+instance WebSocketsData Universe where
+  fromLazyByteString = decode
+  toLazyByteString   = encode
+

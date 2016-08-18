@@ -1,6 +1,9 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 module Snakes.Model.Effect where
 
+import Data.Binary
+import GHC.Generics
 import Graphics.Gloss
 import System.Random
 
@@ -9,7 +12,9 @@ data EffectType
   = EffectFood      -- ^ Just some food. Makes a snake a bit longer.
   | EffectReverse   -- ^ Reverse all snakes in the game.
   | EffectPhantom   -- ^ Temporarily make snake a phantom, allowing crosses with other snakes and self-crosses.
-  deriving (Eq, Enum, Bounded)
+  deriving (Eq, Enum, Bounded, Generic)
+
+instance Binary EffectType
 
 instance Random EffectType where
   randomR (a, b) g =
@@ -42,7 +47,9 @@ effectColor EffectPhantom = cyan
 data Effect = Effect
   { effectType    :: EffectType       -- ^ Effect type.
   , effectTimeout :: Float            -- ^ Time left (in seconds).
-  }
+  } deriving (Generic)
+
+instance Binary Effect
 
 -- | Create an effect with default duration.
 mkEffect :: EffectType -> Effect

@@ -28,11 +28,13 @@ library
     Snakes.Model.Universe
     Snakes.Render
   build-depends:       base >= 4.7 && < 5
+                     , binary
                      , containers
                      , gloss
                      , MonadRandom
                      , random
                      , stm
+                     , websockets
   default-language:    Haskell2010
 
 executable snakes
@@ -44,6 +46,37 @@ executable snakes
                      , MonadRandom
                      , snakes
                      , stm
+  default-language:    Haskell2010
+
+executable snakes-client
+  hs-source-dirs:      client
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , snakes
+                     , gloss
+                     , stm
+                     , websockets
+  default-language:    Haskell2010
+
+executable snakes-server
+  hs-source-dirs:      server
+  main-is:             Main.hs
+  other-modules:
+    Snakes.Server
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , containers
+                     , http-types
+                     , MonadRandom
+                     , servant
+                     , servant-server
+                     , snakes
+                     , stm
+                     , wai
+                     , wai-websockets
+                     , warp
+                     , websockets
   default-language:    Haskell2010
 
 source-repository head
