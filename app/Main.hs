@@ -14,9 +14,9 @@ main :: IO ()
 main = do
   u <- spawnPlayer "You" emptyUniverse
   initialWorld <- atomically $ newTVar u
-  spawnBot "Bot 1" simpleBot initialWorld
-  spawnBot "Bot 2" simpleBot initialWorld
-  spawnBot "Bot 3" simpleBot initialWorld
+  spawnBot "Bot 1" simpleBot  initialWorld
+  spawnBot "Bot 2" lazyBot    initialWorld
+  spawnBot "Bot 3" lazyBot    initialWorld
 
   playIO display bgColor fps initialWorld renderWorld handleWorld updateWorld
   where

@@ -37,7 +37,9 @@ mkDefaultConfig = do
           <$> newTVar emptyUniverse
           <*> newTVar Map.empty
           <*> newTVar (map show [1..])
-  spawnBot "Bot 1" simpleBot (configUniverse cfg)
+  spawnBot "Bot 1" simpleBot  (configUniverse cfg)
+  spawnBot "Bot 2" lazyBot    (configUniverse cfg)
+  spawnBot "Bot 3" lazyBot    (configUniverse cfg)
   return cfg
 
 -- | An API for the Game of Snakes server.
