@@ -30,7 +30,7 @@ itemActiveTotal :: Int    -- ^ Number of simultaneously active items.
 
 fieldSize = (700, 700)
 fieldMargin = (50, 50)
-playerColors = map dark [white, red, green, cyan, orange, magenta, yellow]
+playerColors = map dark [red, green, cyan, orange, magenta, yellow]
 
 snakeLinkSize = 7
 snakeLinkGap  = 7.5
@@ -43,4 +43,4 @@ deadLinkSpeed    = 75
 deadLinkColor    = greyN 0.3
 
 itemTurnRate    = 2
-itemActiveTotal = 3
+itemActiveTotal = 7
