@@ -43,10 +43,10 @@ mkDefaultConfig = do
   return cfg
 
 -- | An API for the Game of Snakes server.
-type DotsAPI = "connect" :> Raw
+type SnakesAPI = "connect" :> Raw
 
 -- | The Game of Snakes server 'Application'.
-server :: Config -> Server DotsAPI
+server :: Config -> Server SnakesAPI
 server config = websocketsOr defaultConnectionOptions wsApp backupApp
   where
     wsApp :: ServerApp
