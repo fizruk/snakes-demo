@@ -1,11 +1,3 @@
-resolver: nightly-2016-07-15
-
+resolver: lts-8.0
 packages:
 - '.'
-
-extra-deps:
-- gloss-1.10.2.3
-- bmp-1.2.6.1
-- gloss-rendering-1.10.3.3
-- binary-0.8.4.1
-
